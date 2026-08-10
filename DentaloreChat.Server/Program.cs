@@ -14,6 +14,10 @@ builder.Services.AddCors(options => {
               .AllowCredentials(); 
     });
 });
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IClinicService, ClinicService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 
