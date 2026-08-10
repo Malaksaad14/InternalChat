@@ -31,5 +31,17 @@ public class AppDbContext : DbContext
             // One user in Clinic B (for testing clinic-level separation)
             new User { Id = 3, Name = "Dr. Sara", ClinicId = 2 }
         );
+        // Add this inside OnModelCreating in AppDbContext.cs
+        modelBuilder.Entity<Conversation>().HasData(
+            new Conversation { Id = 1, ClinicId = 1, IsGroup = false }
+        );
+        modelBuilder.Entity<ConversationMember>().HasData(
+            new ConversationMember { ConversationId = 1, UserId = 1 },
+            new ConversationMember { ConversationId = 1, UserId = 2 }
+        );
+        modelBuilder.Entity<Message>().HasData(
+            new Message { Id = 1, ConversationId = 1, SenderId = 1, Content = "Hello Dr. Ahmed, welcome to Dentalore!", Timestamp = DateTime.UtcNow.AddMinutes(-10) },
+            new Message { Id = 2, ConversationId = 1, SenderId = 2, Content = "Hi Dr. Malak! Ready to test the chat POC.", Timestamp = DateTime.UtcNow.AddMinutes(-5) }
+        );
     }
 }
