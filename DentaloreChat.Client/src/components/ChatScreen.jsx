@@ -18,24 +18,24 @@ export function getChatKey(activeUserId, contact) {
 const INITIAL_HISTORIES = {
   // Shared Group Chat Feed
   "group_101": [
-    { id: 'g1', senderId: 1, content: "Welcome everyone to our Dental Clinic Group Chat! 👋", timestamp: new Date(Date.now() - 25 * 60000).toISOString() },
-    { id: 'g2', senderId: 2, content: "Great to have a shared group for Branch A and B!", timestamp: new Date(Date.now() - 20 * 60000).toISOString() },
-    { id: 'g3', senderId: 3, content: "Dr. Sara joining from Branch B! Excited to collaborate.", timestamp: new Date(Date.now() - 15 * 60000).toISOString() }
+    { id: 'g1', senderId: 1, content: "Welcome doctors to our Dental Clinic Team Group Chat! 👋", timestamp: new Date(Date.now() - 25 * 60000).toISOString() },
+    { id: 'g2', senderId: 2, content: "Great to have a shared channel for Branch A and Branch B!", timestamp: new Date(Date.now() - 20 * 60000).toISOString() },
+    { id: 'g3', senderId: 3, content: "Dr. Sara joining from Branch B! Ready to collaborate.", timestamp: new Date(Date.now() - 15 * 60000).toISOString() }
   ],
   // Shared Direct Chat between Dr. Malak (1) and Dr. Ahmed (2)
   "direct_1_2": [
     { id: 'p1', senderId: 1, content: "Hello Dr. Ahmed, welcome to Dentalore!", timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
-    { id: 'p2', senderId: 2, content: "Hi Dr. Malak! Ready to test the direct chat.", timestamp: new Date(Date.now() - 5 * 60000).toISOString() }
+    { id: 'p2', senderId: 2, content: "Hi Dr. Malak! Ready to discuss today's clinic schedule.", timestamp: new Date(Date.now() - 5 * 60000).toISOString() }
   ],
   // Shared Direct Chat between Dr. Malak (1) and Dr. Sara (3)
   "direct_1_3": [
-    { id: 's1', senderId: 1, content: "Hi Dr. Sara! How is Branch B doing today?", timestamp: new Date(Date.now() - 12 * 60000).toISOString() },
+    { id: 's1', senderId: 1, content: "Hi Dr. Sara! How is Branch B operations today?", timestamp: new Date(Date.now() - 12 * 60000).toISOString() },
     { id: 's2', senderId: 3, content: "Hello Dr. Malak! Everything is running smoothly at Branch B.", timestamp: new Date(Date.now() - 7 * 60000).toISOString() }
   ],
   // Shared Direct Chat between Dr. Ahmed (2) and Dr. Sara (3)
   "direct_2_3": [
     { id: 'as1', senderId: 2, content: "Hi Dr. Sara, checking in from Branch A.", timestamp: new Date(Date.now() - 8 * 60000).toISOString() },
-    { id: 'as2', senderId: 3, content: "Hi Dr. Ahmed! All good here.", timestamp: new Date(Date.now() - 4 * 60000).toISOString() }
+    { id: 'as2', senderId: 3, content: "Hi Dr. Ahmed! Patient cases are updated.", timestamp: new Date(Date.now() - 4 * 60000).toISOString() }
   ]
 };
 
@@ -101,7 +101,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       <div className="chat-header">
         <div className="chat-header-user">
           <div className="avatar-wrapper">
-            <div className="avatar" style={{ background: isGroup ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' : undefined }}>
+            <div className="avatar" style={{ background: isGroup ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : undefined }}>
               {contactInitials}
             </div>
             <div className="status-dot"></div>
@@ -110,7 +110,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
             <div className="chat-header-name">{contactName}</div>
             <div className="chat-header-status">
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--online-green)', display: 'inline-block' }}></span>
-              {isGroup ? `${selectedContact.membersCount || 3} Members Online` : 'Online'}
+              {isGroup ? `${selectedContact.membersCount || 3} Doctors Online` : 'Online'}
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
               <div key={msg.id} className={`message-row ${isSent ? 'sent' : 'received'}`}>
                 <div className="message-bubble-wrapper">
                   {!isSent && (
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--accent-pink)', marginBottom: '2px', marginLeft: '4px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '2px', marginLeft: '4px' }}>
                       {senderName}
                     </div>
                   )}

@@ -67,7 +67,7 @@ export default function NavIconBar({ activeUser, onSwitchUserClick }) {
             onSwitchUserClick(nextUser);
           }}
         >
-          <div className="avatar" style={{ width: '38px', height: '38px', fontSize: '13px', background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}>
+          <div className="avatar" style={{ width: '38px', height: '38px', fontSize: '13px', background: 'linear-gradient(135deg, #0284c7, #06b6d4)' }}>
             {activeUser?.name ? activeUser.name.split(' ').map(n => n[0]).join('') : 'U'}
           </div>
           <div className="status-dot"></div>

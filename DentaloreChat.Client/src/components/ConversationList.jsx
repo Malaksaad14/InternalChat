@@ -36,9 +36,9 @@ export default function ConversationList({
       <div className="sidebar-header">
         <div className="sidebar-title-row">
           <div>
-            <div className="sidebar-title">Messages</div>
+            <div className="sidebar-title">Medical Chat</div>
             <div className="sidebar-user-email">
-              Logged in: <strong style={{ color: 'var(--accent-pink)' }}>{activeUser?.name || 'User'}</strong>
+              Logged in: <strong style={{ color: '#38bdf8' }}>{activeUser?.name || 'User'}</strong>
             </div>
           </div>
           <button className="icon-btn" title="Options" style={{ width: '32px', height: '32px' }}>
@@ -55,7 +55,7 @@ export default function ConversationList({
           </svg>
           <input 
             type="text" 
-            placeholder="Search channels & contacts..." 
+            placeholder="Search channels & doctors..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -65,7 +65,7 @@ export default function ConversationList({
       {/* Conversations / Group Channel List */}
       <div className="category-list">
         <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
-          CHANNELS & GROUPS
+          CLINIC CHANNELS
         </div>
         
         <div 
@@ -77,7 +77,7 @@ export default function ConversationList({
           style={{ cursor: 'pointer' }}
         >
           <div className="category-left">
-            <div className="category-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', color: '#fff' }}>
+            <div className="category-icon" style={{ background: 'linear-gradient(135deg, #0284c7, #06b6d4)', color: '#fff' }}>
               👥
             </div>
             <div>
@@ -85,7 +85,7 @@ export default function ConversationList({
                 {singleGroup.groupName}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                3 Members • Group Chat
+                3 Members • Medical Team
               </div>
             </div>
           </div>
@@ -96,8 +96,8 @@ export default function ConversationList({
       {/* Direct Messages Section Header */}
       <div className="sidebar-section-divider">
         <span className="section-label">DIRECT MESSAGES</span>
-        <span style={{ fontSize: '11px', color: 'var(--accent-purple-light)' }}>
-          {filteredContacts.length} Contacts
+        <span style={{ fontSize: '11px', color: '#38bdf8' }}>
+          {filteredContacts.length} Doctors
         </span>
       </div>
 
@@ -113,7 +113,7 @@ export default function ConversationList({
               className={`user-card ${isSelected ? 'active-chat' : ''}`}
               onClick={() => {
                 onSelectContact(contact);
-                onSelectConversation(contact.id); // Distinct conversation ID per contact
+                onSelectConversation(contact.id);
               }}
               title={`Click to open direct chat with ${contact.name}`}
             >
@@ -146,7 +146,7 @@ export default function ConversationList({
       {/* Bottom Logged-in User Switch Context Bar */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
         <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 'bold' }}>
-          LOGGED IN AS (SWITCH USER):
+          LOGGED IN AS (SWITCH DOCTOR):
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
           {ALL_SAMPLE_USERS.map(u => {
@@ -161,9 +161,9 @@ export default function ConversationList({
                   fontSize: '11px',
                   fontWeight: '600',
                   borderRadius: '8px',
-                  border: isActive ? '1px solid #ec4899' : '1px solid var(--border-color)',
-                  background: isActive ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3))' : 'var(--bg-card)',
-                  color: isActive ? '#ffffff' : 'var(--text-muted)',
+                  border: isActive ? '1px solid #38bdf8' : '1px solid var(--border-color)',
+                  background: isActive ? 'linear-gradient(135deg, rgba(2, 132, 199, 0.3), rgba(6, 182, 212, 0.3))' : 'var(--bg-card)',
+                  color: isActive ? '#38bdf8' : 'var(--text-muted)',
                   cursor: 'pointer',
                   textAlign: 'center'
                 }}
