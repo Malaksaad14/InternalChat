@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using DentaloreChat.Server.Hubs;
 
 [Route("api/[controller]")]
 [ApiController]
 public class MessagesController : ControllerBase
 {
     private readonly IMessageService _messageService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public MessagesController(IMessageService messageService)
+    public MessagesController(IMessageService messageService, IHubContext<ChatHub> hubContext)
     {
         _messageService = messageService;
+        _hubContext = hubContext;
     }
 
     [HttpGet("{conversationId}")]
@@ -24,7 +28,12 @@ public class MessagesController : ControllerBase
         if (message == null || string.IsNullOrWhiteSpace(message.Content))
             return BadRequest("Message content cannot be empty.");
 
-        await _messageService.SendMessageAsync(message);
-        return Ok(message);
+        var savedMessage = await _messageService.SendMessageAsync(message);
+        
+        // Broadcast the message to all clients in the conversation
+        await _hubContext.Clients.Group($"conversation_{savedMessage.ConversationId}")
+            .SendAsync("ReceiveMessage", savedMessage.ConversationId, savedMessage.SenderId, savedMessage.Content, savedMessage.Timestamp);
+        
+        return Ok(savedMessage);
     }
 }

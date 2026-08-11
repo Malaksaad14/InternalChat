@@ -17,9 +17,10 @@ public class MessageRepository : IMessageRepository
             .ToListAsync();
     }
 
-    public async Task AddAsync(Message message)
+    public async Task<Message> AddAsync(Message message)
     {
         await _context.Messages.AddAsync(message);
         await _context.SaveChangesAsync();
+        return message;
     }
 }

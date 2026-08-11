@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using DentaloreChat.Server.Hubs;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add DbContext and configure it to use SQLite
@@ -9,6 +11,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReactApp", policy => {
         policy.WithOrigins("http://localhost:5173") // Vite default port
@@ -45,5 +48,6 @@ app.UseAuthorization();
 app.UseCors("AllowReactApp");
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 app.Run();

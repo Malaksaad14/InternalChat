@@ -12,7 +12,7 @@ public class MessageService : IMessageService
         return await _messageRepo.GetMessagesByConversationIdAsync(conversationId);
     }
 
-    public async Task SendMessageAsync(Message message)
+    public async Task<Message> SendMessageAsync(Message message)
     {
         // Business rule validation
         if (string.IsNullOrWhiteSpace(message.Content))
@@ -21,6 +21,6 @@ public class MessageService : IMessageService
         }
 
         message.Timestamp = DateTime.UtcNow;
-        await _messageRepo.AddAsync(message);
+        return await _messageRepo.AddAsync(message);
     }
 }
