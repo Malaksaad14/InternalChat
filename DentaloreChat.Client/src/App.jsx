@@ -1,178 +1,73 @@
 import React, { useState } from 'react';
-import UserSelector from './components/UserSelector';
+import NavIconBar from './components/NavIconBar';
 import ConversationList from './components/ConversationList';
 import ChatScreen from './components/ChatScreen';
+import './App.css';
+
+const ALL_SAMPLE_USERS = [
+  { id: 1, name: "Dr. Malak", clinicId: 1, clinicName: "Branch A" },
+  { id: 2, name: "Dr. Ahmed", clinicId: 1, clinicName: "Branch A" },
+  { id: 3, name: "Dr. Sara", clinicId: 2, clinicName: "Branch B" }
+];
 
 export default function App() {
-  // Set the default user to Dr. Malak in Clinic 1
-  const [activeUser, setActiveUser] = useState({ id: 1, name: "Dr. Malak", clinicId: 1 });
-  // Set the default loaded conversation to the seeded Conversation 1
+  // Default logged-in user: Dr. Malak (id: 1)
+  const [activeUser, setActiveUser] = useState(ALL_SAMPLE_USERS[0]);
+  
+  // Selected conversation ID
   const [selectedConversationId, setSelectedConversationId] = useState(1);
 
+  // Selected contact target (Default: Dr. Ahmed)
+  const [selectedContact, setSelectedContact] = useState(ALL_SAMPLE_USERS[1]);
+
+  // Switch logged-in user context safely
+  const handleSwitchActiveUser = (newUser) => {
+    setActiveUser(newUser);
+
+    // If currently selected contact is the user themselves, switch to a valid colleague
+    if (!selectedContact?.isGroup && selectedContact?.id === newUser.id) {
+      const fallbackContact = ALL_SAMPLE_USERS.find(u => u.id !== newUser.id);
+      if (fallbackContact) {
+        setSelectedContact(fallbackContact);
+      }
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'sans-serif' }}>
-      
-      {/* Top Bar for simulating clinic-level isolation */}
-      <UserSelector activeUser={activeUser} onSelectUser={setActiveUser} />
-      
-      {/* Main Chat Layout */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', backgroundColor: '#ffffff' }}>
-        
-        {/* Left Sidebar: Conversation List */}
+    <div className="app-container">
+      {/* Far Left Navigation Icon Bar */}
+      <NavIconBar 
+        activeUser={activeUser} 
+        onSwitchUserClick={(nextUser) => {
+          if (nextUser) {
+            handleSwitchActiveUser(nextUser);
+          } else {
+            const currentIndex = ALL_SAMPLE_USERS.findIndex(u => u.id === activeUser.id);
+            const next = ALL_SAMPLE_USERS[(currentIndex + 1) % ALL_SAMPLE_USERS.length];
+            handleSwitchActiveUser(next);
+          }
+        }} 
+      />
+
+      {/* Main App Window Card (Sidebar + Full Chat Area) */}
+      <div className="app-main-window">
+        {/* Left Sidebar: Channels & Direct Messages contacts list */}
         <ConversationList 
-          activeClinicId={activeUser.clinicId} 
+          activeUser={activeUser}
+          onSwitchActiveUser={handleSwitchActiveUser}
+          selectedContact={selectedContact}
+          onSelectContact={setSelectedContact}
           selectedConversationId={selectedConversationId} 
           onSelectConversation={setSelectedConversationId} 
         />
         
-        {/* Right Area: Active Chat History and Input */}
+        {/* Middle/Full Area: Active Chat Feed & Input */}
         <ChatScreen 
           conversationId={selectedConversationId} 
-          activeUser={activeUser} 
+          activeUser={activeUser}
+          selectedContact={selectedContact} 
         />
-        
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from './assets/vite.svg'
-// import heroImg from './assets/hero.png'
-// import './App.css'
-
-// function App() {
-//   const [count, setCount] = useState(0)
-
-//   return (
-//     <>
-//       <section id="center">
-//         <div className="hero">
-//           <img src={heroImg} className="base" width="170" height="179" alt="" />
-//           <img src={reactLogo} className="framework" alt="React logo" />
-//           <img src={viteLogo} className="vite" alt="Vite logo" />
-//         </div>
-//         <div>
-//           <h1>Get started</h1>
-//           <p>
-//             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-//           </p>
-//         </div>
-//         <button
-//           type="button"
-//           className="counter"
-//           onClick={() => setCount((count) => count + 1)}
-//         >
-//           Count is {count}
-//         </button>
-//       </section>
-
-//       <div className="ticks"></div>
-
-//       <section id="next-steps">
-//         <div id="docs">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#documentation-icon"></use>
-//           </svg>
-//           <h2>Documentation</h2>
-//           <p>Your questions, answered</p>
-//           <ul>
-//             <li>
-//               <a href="https://vite.dev/" target="_blank">
-//                 <img className="logo" src={viteLogo} alt="" />
-//                 Explore Vite
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://react.dev/" target="_blank">
-//                 <img className="button-icon" src={reactLogo} alt="" />
-//                 Learn more
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//         <div id="social">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#social-icon"></use>
-//           </svg>
-//           <h2>Connect with us</h2>
-//           <p>Join the Vite community</p>
-//           <ul>
-//             <li>
-//               <a href="https://github.com/vitejs/vite" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#github-icon"></use>
-//                 </svg>
-//                 GitHub
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://chat.vite.dev/" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#discord-icon"></use>
-//                 </svg>
-//                 Discord
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://x.com/vite_js" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#x-icon"></use>
-//                 </svg>
-//                 X.com
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://bsky.app/profile/vite.dev" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#bluesky-icon"></use>
-//                 </svg>
-//                 Bluesky
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//       </section>
-
-//       <div className="ticks"></div>
-//       <section id="spacer"></section>
-//     </>
-//   )
-// }
-
-// export default App
