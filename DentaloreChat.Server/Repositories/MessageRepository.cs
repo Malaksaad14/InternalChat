@@ -9,12 +9,18 @@ public class MessageRepository : IMessageRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Message>> GetMessagesByConversationIdAsync(int conversationId)
+    // UPDATED: Added page and pageSize for pagination
+    public async Task<IEnumerable<Message>> GetMessagesByConversationIdAsync(int conversationId, int page = 1, int pageSize = 20)
     {
-        return await _context.Messages
+        var messages = await _context.Messages
             .Where(m => m.ConversationId == conversationId)
-            .OrderBy(m => m.Timestamp)
+            .OrderByDescending(m => m.Timestamp) // Start from the newest messages
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+            
+        messages.Reverse(); // Put them back in chronological order for the chat screen
+        return messages;
     }
 
     public async Task<Message> AddAsync(Message message)

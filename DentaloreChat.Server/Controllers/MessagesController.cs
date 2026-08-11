@@ -15,10 +15,12 @@ public class MessagesController : ControllerBase
         _hubContext = hubContext;
     }
 
+    // UPDATED: Accepts query parameters for pagination
     [HttpGet("{conversationId}")]
-    public async Task<IActionResult> GetHistory(int conversationId)
+    public async Task<IActionResult> GetHistory(int conversationId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var messages = await _messageService.GetHistoryAsync(conversationId);
+        
+        var messages = await _messageService.GetHistoryAsync(conversationId, page, pageSize);
         return Ok(messages);
     }
 

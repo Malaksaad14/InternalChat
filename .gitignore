@@ -488,3 +488,9 @@ node_modules/
 dist/
 .env
 .env.local
+
+
+# .NET Core
+bin/
+obj/
+appsettings.Development.json
