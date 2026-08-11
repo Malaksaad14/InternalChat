@@ -14,10 +14,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReactApp", policy => {
-        policy.WithOrigins("http://localhost:5173") // Vite default port
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174") // Vite ports
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); 
+              .AllowCredentials()
+              .SetIsOriginAllowed((host) => true); // Allow any origin for development
     });
 });
 // 2. Register Repositories (Required for your services)
@@ -41,7 +42,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabled for local development with HTTP
 
 app.UseAuthorization();
 

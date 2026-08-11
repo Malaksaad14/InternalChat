@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import * as signalR from '@microsoft/signalr';
 
 const USER_MAP = {
   1: "Dr. Malak",
@@ -14,35 +15,29 @@ export function getChatKey(activeUserId, contact) {
   return `direct_${ids[0]}_${ids[1]}`;
 }
 
-// Initial shared conversation feeds
-const INITIAL_HISTORIES = {
-  // Shared Group Chat Feed
-  "group_101": [
-    { id: 'g1', senderId: 1, content: "Welcome doctors to our Dental Clinic Team Group Chat! 👋", timestamp: new Date(Date.now() - 25 * 60000).toISOString() },
-    { id: 'g2', senderId: 2, content: "Great to have a shared channel for Branch A and Branch B!", timestamp: new Date(Date.now() - 20 * 60000).toISOString() },
-    { id: 'g3', senderId: 3, content: "Dr. Sara joining from Branch B! Ready to collaborate.", timestamp: new Date(Date.now() - 15 * 60000).toISOString() }
-  ],
-  // Shared Direct Chat between Dr. Malak (1) and Dr. Ahmed (2)
-  "direct_1_2": [
-    { id: 'p1', senderId: 1, content: "Hello Dr. Ahmed, welcome to Dentalore!", timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
-    { id: 'p2', senderId: 2, content: "Hi Dr. Malak! Ready to discuss today's clinic schedule.", timestamp: new Date(Date.now() - 5 * 60000).toISOString() }
-  ],
-  // Shared Direct Chat between Dr. Malak (1) and Dr. Sara (3)
-  "direct_1_3": [
-    { id: 's1', senderId: 1, content: "Hi Dr. Sara! How is Branch B operations today?", timestamp: new Date(Date.now() - 12 * 60000).toISOString() },
-    { id: 's2', senderId: 3, content: "Hello Dr. Malak! Everything is running smoothly at Branch B.", timestamp: new Date(Date.now() - 7 * 60000).toISOString() }
-  ],
-  // Shared Direct Chat between Dr. Ahmed (2) and Dr. Sara (3)
-  "direct_2_3": [
-    { id: 'as1', senderId: 2, content: "Hi Dr. Sara, checking in from Branch A.", timestamp: new Date(Date.now() - 8 * 60000).toISOString() },
-    { id: 'as2', senderId: 3, content: "Hi Dr. Ahmed! Patient cases are updated.", timestamp: new Date(Date.now() - 4 * 60000).toISOString() }
-  ]
-};
+// Map conversation IDs based on the database
+// Conversation 1: Malak (1) & Ahmed (2)
+// Conversation 2: Malak (1) & Sara (3)
+// Conversation 3: Ahmed (2) & Sara (3)
+// Conversation 101: Group Chat
+function getConversationIdForUsers(userId1, userId2) {
+  const ids = [userId1, userId2].sort((a, b) => a - b);
+  if (ids[0] === 1 && ids[1] === 2) return 1; // Malak & Ahmed
+  if (ids[0] === 1 && ids[1] === 3) return 2; // Malak & Sara
+  if (ids[0] === 2 && ids[1] === 3) return 3; // Ahmed & Sara
+  return 1; // Default fallback
+}
+
+// Initial shared conversation feeds (empty - will be loaded from database)
+const INITIAL_HISTORIES = {};
 
 export default function ChatScreen({ conversationId, activeUser, selectedContact }) {
   const [chatHistories, setChatHistories] = useState(INITIAL_HISTORIES);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
+  const [connection, setConnection] = useState(null);
+  const connectionRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const chatId = getChatKey(activeUser?.id, selectedContact);
   const isGroup = selectedContact?.isGroup;
@@ -56,6 +51,98 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatId, currentMessages]);
 
+  // Fetch messages from database when conversation changes
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!conversationId) return;
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5123/api/messages/${conversationId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setChatHistories(prev => ({
+            ...prev,
+            [chatId]: data
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching messages:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [conversationId, chatId]);
+
+  // Setup SignalR connection
+  useEffect(() => {
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl('http://localhost:5123/chathub')
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(newConnection);
+    connectionRef.current = newConnection;
+
+    const startConnection = async () => {
+      try {
+        await newConnection.start();
+        console.log('SignalR Connected');
+        
+        // Join the conversation group
+        if (conversationId) {
+          await newConnection.invoke('JoinConversation', conversationId);
+        }
+      } catch (err) {
+        console.error('SignalR Connection Error: ', err);
+      }
+    };
+
+    startConnection();
+
+    // Listen for incoming messages
+    newConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
+      if (convId === conversationId) {
+        const newMessage = {
+          id: Date.now(),
+          senderId: senderId,
+          content: content,
+          timestamp: timestamp
+        };
+        setChatHistories(prev => {
+          const currentHistory = prev[chatId] || [];
+          // Avoid duplicates by checking if a message with same content and sender exists
+          const isDuplicate = currentHistory.some(
+            msg => msg.content === content && msg.senderId === senderId && 
+            Math.abs(new Date(msg.timestamp) - new Date(timestamp)) < 1000
+          );
+          if (isDuplicate) return prev;
+          
+          return {
+            ...prev,
+            [chatId]: [...currentHistory, newMessage]
+          };
+        });
+      }
+    });
+
+    return () => {
+      if (newConnection.state === signalR.HubConnectionState.Connected) {
+        newConnection.invoke('LeaveConversation', conversationId).catch(err => console.error(err));
+      }
+      newConnection.stop();
+      newConnection.off('ReceiveMessage');
+    };
+  }, [conversationId, chatId]);
+
+  // Re-join conversation when conversationId changes
+  useEffect(() => {
+    if (connection && conversationId && connection.state === signalR.HubConnectionState.Connected) {
+      connection.invoke('JoinConversation', conversationId).catch(err => console.error(err));
+    }
+  }, [conversationId, connection]);
+
   const handleSend = (e) => {
     e.preventDefault();
     if (!input.trim() || !activeUser?.id) return;
@@ -67,7 +154,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       timestamp: new Date().toISOString()
     };
 
-    // Update shared chat feed symmetrically
+    // Update shared chat feed symmetrically (local update)
     setChatHistories(prev => ({
       ...prev,
       [chatId]: [...(prev[chatId] || []), newMessageObj]
@@ -75,12 +162,14 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     setInput('');
 
-    // Backend sync
-    fetch('/api/messages', {
+    // Backend sync - SignalR will broadcast to other clients
+    const targetConversationId = isGroup ? 101 : (typeof conversationId === 'number' ? conversationId : getConversationIdForUsers(activeUser.id, selectedContact?.id));
+    
+    fetch('http://localhost:5123/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        conversationId: isGroup ? 101 : (typeof conversationId === 'number' ? conversationId : 1),
+        conversationId: targetConversationId,
         senderId: activeUser.id,
         content: input
       })

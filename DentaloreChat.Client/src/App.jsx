@@ -14,7 +14,7 @@ export default function App() {
   // Default logged-in user: Dr. Malak (id: 1)
   const [activeUser, setActiveUser] = useState(ALL_SAMPLE_USERS[0]);
   
-  // Selected conversation ID
+  // Selected conversation ID (default: Conversation 1 between Malak and Ahmed)
   const [selectedConversationId, setSelectedConversationId] = useState(1);
 
   // Selected contact target (Default: Dr. Ahmed)
@@ -29,9 +29,25 @@ export default function App() {
       const fallbackContact = ALL_SAMPLE_USERS.find(u => u.id !== newUser.id);
       if (fallbackContact) {
         setSelectedContact(fallbackContact);
+        // Update conversation ID based on new user and fallback contact
+        const newConvId = getConversationIdForUsers(newUser.id, fallbackContact.id);
+        setSelectedConversationId(newConvId);
       }
+    } else if (selectedContact && !selectedContact.isGroup) {
+      // Update conversation ID based on new user and same contact
+      const newConvId = getConversationIdForUsers(newUser.id, selectedContact.id);
+      setSelectedConversationId(newConvId);
     }
   };
+
+  // Helper function to get conversation ID based on two user IDs
+  function getConversationIdForUsers(userId1, userId2) {
+    const ids = [userId1, userId2].sort((a, b) => a - b);
+    if (ids[0] === 1 && ids[1] === 2) return 1; // Malak & Ahmed
+    if (ids[0] === 1 && ids[1] === 3) return 2; // Malak & Sara
+    if (ids[0] === 2 && ids[1] === 3) return 3; // Ahmed & Sara
+    return 1; // Default fallback
+  }
 
   return (
     <div className="app-container">

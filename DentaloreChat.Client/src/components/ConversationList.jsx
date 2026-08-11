@@ -6,6 +6,19 @@ const ALL_SAMPLE_USERS = [
   { id: 3, name: "Dr. Sara", clinicId: 2, clinicName: "Branch B" }
 ];
 
+// Map conversation IDs based on the database
+// Conversation 1: Malak (1) & Ahmed (2)
+// Conversation 2: Malak (1) & Sara (3)
+// Conversation 3: Ahmed (2) & Sara (3)
+// Conversation 101: Group Chat
+function getConversationIdForUsers(userId1, userId2) {
+  const ids = [userId1, userId2].sort((a, b) => a - b);
+  if (ids[0] === 1 && ids[1] === 2) return 1; // Malak & Ahmed
+  if (ids[0] === 1 && ids[1] === 3) return 2; // Malak & Sara
+  if (ids[0] === 2 && ids[1] === 3) return 3; // Ahmed & Sara
+  return 1; // Default fallback
+}
+
 export default function ConversationList({ 
   activeUser, 
   onSwitchActiveUser, 
@@ -18,7 +31,7 @@ export default function ConversationList({
   const [searchTerm, setSearchTerm] = useState('');
 
   // Single main group channel renamed to "Group Chat"
-  const singleGroup = { id: 101, isGroup: true, groupName: "Group Chat", membersCount: 3 };
+  const singleGroup = { id: 101, isGroup: true, groupName: "Group Chat", membersCount: 3, conversationId: 101 };
 
   // Direct contacts excluding the currently logged-in active user
   const otherUsers = ALL_SAMPLE_USERS.filter(u => u.id !== activeUser.id);
@@ -36,7 +49,7 @@ export default function ConversationList({
       <div className="sidebar-header">
         <div className="sidebar-title-row">
           <div>
-            <div className="sidebar-title">Medical Chat</div>
+            <div className="sidebar-title">Messages</div>
             <div className="sidebar-user-email">
               Logged in: <strong style={{ color: '#38bdf8' }}>{activeUser?.name || 'User'}</strong>
             </div>
@@ -113,7 +126,8 @@ export default function ConversationList({
               className={`user-card ${isSelected ? 'active-chat' : ''}`}
               onClick={() => {
                 onSelectContact(contact);
-                onSelectConversation(contact.id);
+                const convId = getConversationIdForUsers(activeUser.id, contact.id);
+                onSelectConversation(convId);
               }}
               title={`Click to open direct chat with ${contact.name}`}
             >

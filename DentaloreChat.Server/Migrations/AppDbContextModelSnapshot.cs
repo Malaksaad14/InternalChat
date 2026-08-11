@@ -67,6 +67,25 @@ namespace DentaloreChat.Server.Migrations
                             Id = 1,
                             ClinicId = 1,
                             IsGroup = false
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ClinicId = 1,
+                            IsGroup = false
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ClinicId = 1,
+                            IsGroup = false
+                        },
+                        new
+                        {
+                            Id = 101,
+                            ClinicId = 1,
+                            GroupName = "Group Chat",
+                            IsGroup = true
                         });
                 });
 
@@ -94,6 +113,41 @@ namespace DentaloreChat.Server.Migrations
                         {
                             ConversationId = 1,
                             UserId = 2
+                        },
+                        new
+                        {
+                            ConversationId = 2,
+                            UserId = 1
+                        },
+                        new
+                        {
+                            ConversationId = 2,
+                            UserId = 3
+                        },
+                        new
+                        {
+                            ConversationId = 3,
+                            UserId = 2
+                        },
+                        new
+                        {
+                            ConversationId = 3,
+                            UserId = 3
+                        },
+                        new
+                        {
+                            ConversationId = 101,
+                            UserId = 1
+                        },
+                        new
+                        {
+                            ConversationId = 101,
+                            UserId = 2
+                        },
+                        new
+                        {
+                            ConversationId = 101,
+                            UserId = 3
                         });
                 });
 
@@ -128,15 +182,71 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hello Dr. Ahmed, welcome to Dentalore!",
                             ConversationId = 1,
                             SenderId = 1,
-                            Timestamp = new DateTime(2026, 8, 10, 12, 37, 14, 203, DateTimeKind.Utc).AddTicks(9382)
+                            Timestamp = new DateTime(2026, 8, 11, 16, 51, 41, 512, DateTimeKind.Utc).AddTicks(4721)
                         },
                         new
                         {
                             Id = 2,
-                            Content = "Hi Dr. Malak! Ready to test the chat POC.",
+                            Content = "Hi Dr. Malak! Ready to discuss today's clinic schedule.",
                             ConversationId = 1,
                             SenderId = 2,
-                            Timestamp = new DateTime(2026, 8, 10, 12, 42, 14, 203, DateTimeKind.Utc).AddTicks(9388)
+                            Timestamp = new DateTime(2026, 8, 11, 16, 56, 41, 512, DateTimeKind.Utc).AddTicks(4730)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Content = "Hi Dr. Sara! How is Branch B operations today?",
+                            ConversationId = 2,
+                            SenderId = 1,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 49, 41, 512, DateTimeKind.Utc).AddTicks(4732)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Content = "Hello Dr. Malak! Everything is running smoothly at Branch B.",
+                            ConversationId = 2,
+                            SenderId = 3,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 54, 41, 512, DateTimeKind.Utc).AddTicks(4734)
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Content = "Hi Dr. Sara, checking in from Branch A.",
+                            ConversationId = 3,
+                            SenderId = 2,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 53, 41, 512, DateTimeKind.Utc).AddTicks(4735)
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Content = "Hi Dr. Ahmed! Patient cases are updated.",
+                            ConversationId = 3,
+                            SenderId = 3,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 57, 41, 512, DateTimeKind.Utc).AddTicks(4737)
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Content = "Welcome doctors to our Dental Clinic Team Group Chat! 👋",
+                            ConversationId = 101,
+                            SenderId = 1,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 36, 41, 512, DateTimeKind.Utc).AddTicks(4739)
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Content = "Great to have a shared channel for Branch A and Branch B!",
+                            ConversationId = 101,
+                            SenderId = 2,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 41, 41, 512, DateTimeKind.Utc).AddTicks(4740)
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Content = "Dr. Sara joining from Branch B! Ready to collaborate.",
+                            ConversationId = 101,
+                            SenderId = 3,
+                            Timestamp = new DateTime(2026, 8, 11, 16, 46, 41, 512, DateTimeKind.Utc).AddTicks(4742)
                         });
                 });
 
