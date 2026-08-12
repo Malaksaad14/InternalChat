@@ -5,7 +5,7 @@ import ChatScreen from './components/ChatScreen';
 import './App.css';
 
 const ALL_SAMPLE_USERS = [
-  { id: 1, name: "Dr. Malak", clinicId: 1, clinicName: "Branch A" },
+  { id: 1, name: "Dr. Hana", clinicId: 1, clinicName: "Branch A" },
   { id: 2, name: "Dr. Ahmed", clinicId: 1, clinicName: "Branch A" },
   { id: 3, name: "Dr. Sara", clinicId: 2, clinicName: "Branch B" },
   { id: 4, name: "Dr. Omar", clinicId: 2, clinicName: "Branch B" }

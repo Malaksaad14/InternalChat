@@ -23,7 +23,7 @@ public class AppDbContext : DbContext
         );
 
         modelBuilder.Entity<User>().HasData(
-            new User { Id = 1, Name = "Dr. Malak", ClinicId = 1 },
+            new User { Id = 1, Name = "Dr. Hana", ClinicId = 1 },
             new User { Id = 2, Name = "Dr. Ahmed", ClinicId = 1 },
             new User { Id = 3, Name = "Dr. Sara", ClinicId = 2 },
             new User { Id = 4, Name = "Dr. Omar", ClinicId = 2 } // NEW: Dr. Omar in Clinic B
@@ -48,7 +48,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Message>().HasData(
             new Message { Id = 1, ConversationId = 1, SenderId = 1, Content = "Hello Dr. Ahmed, welcome to Dentalore!", Timestamp = DateTime.UtcNow.AddMinutes(-10) },
-            new Message { Id = 2, ConversationId = 1, SenderId = 2, Content = "Hi Dr. Malak! Ready to discuss today's clinic schedule.", Timestamp = DateTime.UtcNow.AddMinutes(-5) },
+            new Message { Id = 2, ConversationId = 1, SenderId = 2, Content = "Hi Dr. Hana! Ready to discuss today's clinic schedule.", Timestamp = DateTime.UtcNow.AddMinutes(-5) },
             new Message { Id = 7, ConversationId = 101, SenderId = 1, Content = "Welcome doctors to our Branch A Team Group Chat! 👋", Timestamp = DateTime.UtcNow.AddMinutes(-25) },
             new Message { Id = 8, ConversationId = 101, SenderId = 2, Content = "Great to have a shared channel!", Timestamp = DateTime.UtcNow.AddMinutes(-20) },
             
