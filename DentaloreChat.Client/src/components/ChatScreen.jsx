@@ -45,7 +45,7 @@ function formatDateDivider(timestamp) {
 // Initial shared conversation feeds
 const INITIAL_HISTORIES = {};
 
-export default function ChatScreen({ conversationId, activeUser, selectedContact }) {
+export default function ChatScreen({ conversationId, activeUser, selectedContact, onlineUserIds = [] }) {
   const [chatHistories, setChatHistories] = useState(INITIAL_HISTORIES);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
@@ -70,6 +70,13 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
   // Active messages for symmetric chat key
   const currentMessages = chatHistories[chatId] || [];
+  
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState('');
+  const typingTimeoutRef = useRef(null);
+  
+  // Derive online status from the shared onlineUserIds
+  const isContactOnline = selectedContact && !selectedContact.isGroup && onlineUserIds.includes(selectedContact.id);
 
   // NEW: Reset pagination when switching between different chats
   useEffect(() => {
@@ -173,6 +180,10 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
         await newConnection.start();
         // 👇 NEW: Explicitly hide the banner when a fresh connection succeeds! 👇
         setIsOffline(false);
+        // Notify server that this user is online
+        if (activeUser?.id) {
+          await newConnection.invoke('UserConnected', activeUser.id);
+        }
         if (conversationId) {
           await newConnection.invoke('JoinConversation', conversationId);
         }
@@ -185,6 +196,21 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     startConnection();
 
+    newConnection.on('UserTyping', (userName) => {
+     if (userName !== activeUser?.name) {
+    setTypingUser(userName);
+    setIsTyping(true);
+    }
+   });
+
+   newConnection.on('UserStopTyping', () => {
+    setIsTyping(false);
+    setTypingUser('');
+   });
+
+   // UpdateUserStatus is now handled in ConversationList and shared via props
+   // No need to handle it here since we derive status from onlineUserIds
+   
     // Listen for incoming messages
     newConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
       if (convId === conversationId) {
@@ -217,7 +243,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       newConnection.stop();
       newConnection.off('ReceiveMessage');
     };
-  }, [conversationId, chatId]);
+  }, [conversationId, chatId, activeUser?.id, selectedContact?.id]);
 
   // Re-join conversation when conversationId changes
   useEffect(() => {
@@ -225,6 +251,23 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       connection.invoke('JoinConversation', conversationId).catch(err => console.error(err));
     }
   }, [conversationId, connection]);
+  
+  const handleInputChange = (e) => {
+  const value = e.target.value;
+  setInput(value);
+
+  if (connection && connection.state === signalR.HubConnectionState.Connected) {
+    // hy2ol ll server anna bnktb
+    connection.invoke('TypingStarted', conversationId, activeUser?.name);
+
+    // lw l user w2f ktaba l 2 seconds hyb3t notification an howa wa2f
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      connection.invoke('TypingStopped', conversationId, activeUser?.name);
+    }, 2000);
+  }
+};
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -274,14 +317,31 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
             <div className="avatar" style={{ background: isGroup ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : undefined }}>
               {contactInitials}
             </div>
-            <div className="status-dot"></div>
+            {(isGroup || isContactOnline) && <div className="status-dot"></div>}
           </div>
           <div>
             <div className="chat-header-name">{contactName}</div>
-            <div className="chat-header-status">
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--online-green)', display: 'inline-block' }}></span>
-              {isGroup ? `${selectedContact.membersCount || 2} Doctors Online` : 'Online'}
-            </div>
+<div className="chat-header-status">
+  <span style={{ 
+    width: '6px', 
+    height: '6px', 
+    borderRadius: '50%', 
+    background: isOffline ? '#f59e0b' : ((isGroup || isContactOnline) ? 'var(--online-green)' : '#94a3b8'), 
+    display: 'inline-block',
+    marginRight: '6px'
+  }}></span>
+  {isOffline 
+    ? <span style={{ color: '#f59e0b' }}>Reconnecting...</span>
+    : isTyping 
+      ? <span style={{ color: '#38bdf8', fontStyle: 'italic' }}>{typingUser} is typing...</span>
+      : (isGroup 
+          ? <span style={{ color: '#94a3b8' }}>{selectedContact.membersCount || 2} Doctors Online</span>
+          : (isContactOnline 
+              ? <span style={{ color: 'var(--online-green)' }}>Online</span> 
+              : <span style={{ color: '#94a3b8' }}>Offline</span> 
+            ))
+  }
+</div>
           </div>
         </div>
 
@@ -399,7 +459,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
             type="text"
             placeholder={`Message ${contactName}...`}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
           />
         </div>
 

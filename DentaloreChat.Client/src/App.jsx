@@ -15,6 +15,7 @@ export default function App() {
   const [activeUser, setActiveUser] = useState(ALL_SAMPLE_USERS[0]);
   const [selectedConversationId, setSelectedConversationId] = useState(1);
   const [selectedContact, setSelectedContact] = useState(ALL_SAMPLE_USERS[1]);
+  const [onlineUserIds, setOnlineUserIds] = useState([]);
 
   const handleSwitchActiveUser = (newUser) => {
     setActiveUser(newUser);
@@ -68,13 +69,15 @@ export default function App() {
           selectedContact={selectedContact}
           onSelectContact={setSelectedContact}
           selectedConversationId={selectedConversationId} 
-          onSelectConversation={setSelectedConversationId} 
+          onSelectConversation={setSelectedConversationId}
+          onOnlineUsersChange={setOnlineUserIds}
         />
         
         <ChatScreen 
           conversationId={selectedConversationId} 
           activeUser={activeUser}
-          selectedContact={selectedContact} 
+          selectedContact={selectedContact}
+          onlineUserIds={onlineUserIds}
         />
       </div>
     </div>

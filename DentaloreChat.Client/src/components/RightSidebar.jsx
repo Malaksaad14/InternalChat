@@ -1,16 +1,21 @@
 import React from 'react';
 
 export default function RightSidebar({ activeUser, selectedContact }) {
-  // Use selected contact or default sample user info
-  const contactName = selectedContact?.name || "Ann Schleifer";
-  const contactHandle = selectedContact?.name ? `${selectedContact.name.toLowerCase().replace(/\s+/g, '_')}22` : "ann_Schleifer22";
-  const initials = contactName.split(' ').map(n => n[0]).join('');
+  // لو مفيش contact مختار، ممكن نعرض رسالة أو بيانات افتراضية خفيفة
+  const contactName = selectedContact?.name || "Select a contact";
+  const contactHandle = selectedContact?.name 
+    ? `@${selectedContact.name.toLowerCase().replace(/\s+/g, '_')}` 
+    : "@dentalore_user";
+  
+  const initials = selectedContact?.isGroup 
+    ? "👥" 
+    : (contactName !== "Select a contact" ? contactName.split(' ').map(n => n[0]).join('') : "💬");
 
   return (
     <div className="right-sidebar">
       {/* Profile Card */}
       <div className="profile-card">
-        <div className="profile-avatar-large">
+        <div className="profile-avatar-large" style={{ background: selectedContact?.isGroup ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : undefined }}>
           {initials}
         </div>
         <div className="profile-name">{contactName}</div>
@@ -59,28 +64,16 @@ export default function RightSidebar({ activeUser, selectedContact }) {
         </div>
 
         <div className="media-grid">
-          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #1e293b, #334155)' }}>
-            📷 1
-          </div>
-          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #312e81, #4338ca)' }}>
-            📸 2
-          </div>
-          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #064e3b, #047857)' }}>
-            🖼️ 3
-          </div>
-          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #701a75, #86198f)' }}>
-            ☕ 4
-          </div>
-          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #831843, #be185d)' }}>
-            📑 5
-          </div>
-          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)' }}>
-            📄 6
-          </div>
+          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #1e293b, #334155)' }}>📷 1</div>
+          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #312e81, #4338ca)' }}>📸 2</div>
+          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #064e3b, #047857)' }}>🖼️ 3</div>
+          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #701a75, #86198f)' }}>☕ 4</div>
+          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #831843, #be185d)' }}>📑 5</div>
+          <div className="media-thumb" style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)' }}>📄 6</div>
         </div>
 
         <button className="view-all-btn">
-          View All (1647)
+          View All
         </button>
       </div>
 
