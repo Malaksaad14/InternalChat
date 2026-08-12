@@ -31,13 +31,58 @@ export default function ConversationList({
   const [unreadCounts, setUnreadCounts] = useState({});
   const selectedConvRef = useRef(selectedConversationId);
 
-  // NEW: Keep ref synced, and clear badges when a chat is opened
+  // 1. UPDATED: Clear badges and save the exact time we read this chat
   useEffect(() => {
     selectedConvRef.current = selectedConversationId;
-    if (selectedConversationId) {
+    if (selectedConversationId && activeUser?.id) {
       setUnreadCounts(prev => ({ ...prev, [selectedConversationId]: 0 }));
+      // Save the exact time we looked at this chat
+      localStorage.setItem(`lastReadTime_${activeUser.id}_${selectedConversationId}`, Date.now().toString());
     }
-  }, [selectedConversationId]);
+  }, [selectedConversationId, activeUser]);
+
+  // 2. NEW: Background Fetch to check for missed offline messages when logging in!
+  useEffect(() => {
+    const checkMissedMessages = async () => {
+      if (!activeUser?.id) return;
+
+      // Find all other doctors in this clinic
+      const colleagues = ALL_SAMPLE_USERS.filter(u => u.id !== activeUser.id && u.clinicId === activeUser.clinicId);
+      
+      for (const contact of colleagues) {
+        const convId = getConversationIdForUsers(activeUser.id, contact.id);
+        
+        // Skip the chat we are currently looking at (since we are actively reading it)
+        if (convId === selectedConversationId) continue;
+
+        try {
+          const response = await fetch(`http://localhost:5123/api/messages/${convId}?page=1&pageSize=15`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Get the exact time we last opened this chat
+            const lastReadTimeStr = localStorage.getItem(`lastReadTime_${activeUser.id}_${convId}`);
+            const lastReadTime = lastReadTimeStr ? parseInt(lastReadTimeStr) : 0;
+
+            // FIX: Only count messages that:
+            // 1. Were sent by the OTHER contact (not us)
+            // 2. Have a timestamp newer than our last read time
+            const missedCount = data.filter(msg => 
+              msg.senderId === contact.id && new Date(msg.timestamp).getTime() > lastReadTime
+            ).length;
+
+            if (missedCount > 0) {
+              setUnreadCounts(prev => ({ ...prev, [convId]: missedCount }));
+            }
+          }
+        } catch (err) {
+          console.error("Background fetch failed", err);
+        }
+      }
+    };
+
+    checkMissedMessages();
+  }, [activeUser]); // This runs once exactly when the user logs in
 
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()

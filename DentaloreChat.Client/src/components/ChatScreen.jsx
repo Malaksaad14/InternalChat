@@ -97,7 +97,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     }
 
     // 2. DELIVERED (Two Gray Ticks)
-    if (isContactOnline || isGroup) {
+    if (msg.delivered || isGroup) {
       return (
         <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Delivered">
           <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
@@ -159,12 +159,22 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
         setChatHistories(prev => {
           const existingMessages = prev[chatId] || [];
-          // If page 1, replace. If page > 1, prepend older messages to the top
-          const updatedMessages = page === 1 ? data : [...data, ...existingMessages];
-          return {
-            ...prev,
-            [chatId]: updatedMessages
-          };
+          
+          // Retrieve the timestamp of when the other doctor last read our chat
+          const partnerReadUpTo = parseInt(localStorage.getItem(`readUpTo_${chatId}`) || '0');
+
+          const updatedMessages = (page === 1 ? data : [...data, ...existingMessages]).map(msg => {
+            const msgTime = new Date(msg.timestamp).getTime();
+            // If the message is older than when they last looked, it is PERMANENTLY READ!
+            const isRead = msgTime <= partnerReadUpTo; 
+            
+            return { ...msg, read: isRead, delivered: true }; // DB messages are always delivered
+          });
+
+          // Also update our own read time so the Red Badge stays gone
+          localStorage.setItem(`lastReadTime_${activeUser.id}_${conversationId}`, Date.now().toString());
+
+          return { ...prev, [chatId]: updatedMessages };
         });
 
         // Maintain scroll position so the UI doesn't awkwardly jump to the top
@@ -201,6 +211,26 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     }
   };
 
+  // NEW: Upgrade to 2 Gray Ticks permanently when the contact comes online
+  useEffect(() => {
+    if (isContactOnline) {
+      setChatHistories(prev => {
+        const history = prev[chatId] || [];
+        let changed = false;
+        const newHistory = history.map(msg => {
+          // If we sent it, and it isn't delivered or read yet...
+          if (msg.senderId === activeUser.id && !msg.delivered && !msg.read) {
+            changed = true;
+            localStorage.setItem(`delivered_${msg.id}`, 'true'); // Save to memory permanently
+            return { ...msg, delivered: true };
+          }
+          return msg;
+        });
+        return changed ? { ...prev, [chatId]: newHistory } : prev;
+      });
+    }
+  }, [isContactOnline, chatId, activeUser.id]);
+
   // Setup SignalR connection (Unchanged)
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
@@ -225,18 +255,17 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     const startConnection = async () => {
       try {
         await newConnection.start();
-        // 👇 NEW: Explicitly hide the banner when a fresh connection succeeds! 👇
         setIsOffline(false);
-        // Notify server that this user is online
-        if (activeUser?.id) {
-          await newConnection.invoke('UserConnected', activeUser.id);
-        }
         if (conversationId) {
           await newConnection.invoke('JoinConversation', conversationId);
+          
+          // NEW FIX: Ensure we shout "Read" the exact millisecond the connection finishes loading!
+          if (activeUser?.id) {
+             await newConnection.invoke('MarkAsRead', conversationId, activeUser.id);
+          }
         }
       } catch (err) {
         console.error('SignalR Connection Error: ', err);
-        // Bonus: Also set offline to true if it fails to start the very first time!
         setIsOffline(true);
       }
     };
@@ -287,14 +316,21 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
         }
     });
 
-    // NEW: Listen for when someone else reads the chat!
+    // Listen for when someone else reads the chat!
     newConnection.on('MessagesRead', (convId, readerId) => {
       if (convId === conversationId && readerId !== activeUser?.id) {
+        
+        // Save the exact time they read it to memory forever!
+        localStorage.setItem(`readUpTo_${chatId}`, Date.now().toString());
+
         setChatHistories(prev => {
           const currentHistory = prev[chatId] || [];
-          const updatedHistory = currentHistory.map(msg => 
-            msg.senderId === activeUser?.id ? { ...msg, read: true } : msg
-          );
+          const updatedHistory = currentHistory.map(msg => {
+            if (msg.senderId === activeUser?.id) {
+              return { ...msg, read: true, delivered: true };
+            }
+            return msg;
+          });
           return { ...prev, [chatId]: updatedHistory };
         });
       }
