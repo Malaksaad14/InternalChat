@@ -172,7 +172,12 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     newConnection.onreconnecting(() => setIsOffline(true));
     newConnection.onreconnected(() => setIsOffline(false));
-    newConnection.onclose(() => setIsOffline(true));
+    // UPDATED: Only show the offline banner if it was an actual error/crash!
+    newConnection.onclose((error) => {
+      if (error) {
+        setIsOffline(true);
+      }
+    });
 
 
     const startConnection = async () => {
