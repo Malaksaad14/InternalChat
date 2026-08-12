@@ -78,6 +78,48 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   // Derive online status from the shared onlineUserIds
   const isContactOnline = selectedContact && !selectedContact.isGroup && onlineUserIds.includes(selectedContact.id);
 
+  // --- NEW: WHATSAPP-STYLE MESSAGE TICKS LOGIC ---
+  const renderMessageStatus = (msg, isSent) => {
+    if (!isSent) return null; // Only show ticks on messages WE sent
+
+    // 3. READ (Two Blue Ticks)
+    if (msg.read) {
+      return (
+        <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Read">
+          <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#38bdf8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg style={{ position: 'absolute', left: '6px' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#38bdf8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      );
+    }
+
+    // 2. DELIVERED (Two Gray Ticks)
+    if (isContactOnline || isGroup) {
+      return (
+        <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Delivered">
+          <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg style={{ position: 'absolute', left: '6px' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      );
+    }
+
+    // 1. SENT (One Gray Tick)
+    return (
+      <div style={{ marginLeft: '6px', height: '14px', width: '14px' }} title="Sent">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+    );
+  };
+
   // NEW: Reset pagination when switching between different chats
   useEffect(() => {
     setPage(1);
@@ -239,6 +281,23 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
           };
         });
       }
+      // NEW: Tell the sender I read it!
+        if (senderId !== activeUser?.id) {
+          newConnection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
+        }
+    });
+
+    // NEW: Listen for when someone else reads the chat!
+    newConnection.on('MessagesRead', (convId, readerId) => {
+      if (convId === conversationId && readerId !== activeUser?.id) {
+        setChatHistories(prev => {
+          const currentHistory = prev[chatId] || [];
+          const updatedHistory = currentHistory.map(msg => 
+            msg.senderId === activeUser?.id ? { ...msg, read: true } : msg
+          );
+          return { ...prev, [chatId]: updatedHistory };
+        });
+      }
     });
 
     return () => {
@@ -247,6 +306,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       }
       newConnection.stop();
       newConnection.off('ReceiveMessage');
+      newConnection.off('MessagesRead');
     };
   }, [conversationId, chatId, activeUser?.id, selectedContact?.id]);
 
@@ -254,8 +314,10 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   useEffect(() => {
     if (connection && conversationId && connection.state === signalR.HubConnectionState.Connected) {
       connection.invoke('JoinConversation', conversationId).catch(err => console.error(err));
+      // NEW: Tell them I opened the chat!
+      connection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
     }
-  }, [conversationId, connection]);
+  }, [conversationId, connection, activeUser]);
   
   const handleInputChange = (e) => {
   const value = e.target.value;
@@ -282,7 +344,8 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       id: Date.now(),
       senderId: activeUser.id,
       content: input,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      read: false // <-- NEW
     };
 
     setChatHistories(prev => ({
@@ -437,13 +500,9 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
                     </div>
                     <div className="message-meta">
                       <span>{timeStr}</span>
-                      {isSent && (
-                        <span className="check-icon" title="Delivered">
-                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </span>
-                      )}
+                      {/* NEW: Render the dynamic ticks */}
+                      {renderMessageStatus(msg, isSent)}
+                      
                     </div>
                   </div>
                 </div>

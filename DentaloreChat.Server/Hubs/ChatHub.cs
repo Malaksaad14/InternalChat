@@ -51,5 +51,12 @@ namespace DentaloreChat.Server.Hubs
                   await Clients.Group($"conversation_{conversationId}")
                  .SendAsync("UserStopTyping", userName);
            }
+        
+        // NEW: Broadcasts to the chat that someone has opened/read the messages
+        public async Task MarkAsRead(int conversationId, int readerId)
+        {
+            await Clients.Group($"conversation_{conversationId}")
+                 .SendAsync("MessagesRead", conversationId, readerId);
+        }
     }
 }
