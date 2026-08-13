@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import NavIconBar from './components/NavIconBar';
 import ConversationList from './components/ConversationList';
 import ChatScreen from './components/ChatScreen';
+import * as signalR from '@microsoft/signalr';
 import './App.css';
 
 const ALL_SAMPLE_USERS = [
@@ -16,6 +17,56 @@ export default function App() {
   const [selectedConversationId, setSelectedConversationId] = useState(1);
   const [selectedContact, setSelectedContact] = useState(ALL_SAMPLE_USERS[1]);
   const [onlineUserIds, setOnlineUserIds] = useState([]);
+  const [signalRConnection, setSignalRConnection] = useState(null);
+  const previousUserIdRef = useRef(null);
+
+  // Create shared SignalR connection
+  useEffect(() => {
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl('http://localhost:5123/chathub')
+      .withAutomaticReconnect()
+      .build();
+
+    const startConnection = async () => {
+      try {
+        await connection.start();
+        setSignalRConnection(connection);
+        console.log('SignalR Connected');
+      } catch (err) {
+        console.error('SignalR Connection Error: ', err);
+      }
+    };
+
+    startConnection();
+
+    return () => {
+      connection.stop();
+    };
+  }, []);
+
+  // Handle user connection/disconnection (both initial and changes)
+  useEffect(() => {
+    if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
+      // Disconnect previous user first (only the current connection)
+      if (previousUserIdRef.current && previousUserIdRef.current !== activeUser?.id) {
+        signalRConnection.invoke('UserDisconnected', previousUserIdRef.current).catch(err => console.error(err));
+      }
+      
+      // Connect new user
+      if (activeUser?.id) {
+        signalRConnection.invoke('UserConnected', activeUser.id).catch(err => console.error(err));
+        previousUserIdRef.current = activeUser.id;
+      }
+    }
+  }, [activeUser, signalRConnection]);
+
+  // Initial connection - connect first user when SignalR is ready
+  useEffect(() => {
+    if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected && activeUser?.id && previousUserIdRef.current === null) {
+      signalRConnection.invoke('UserConnected', activeUser.id).catch(err => console.error(err));
+      previousUserIdRef.current = activeUser.id;
+    }
+  }, [signalRConnection, activeUser]);
 
   const handleSwitchActiveUser = (newUser) => {
     setActiveUser(newUser);
@@ -71,6 +122,7 @@ export default function App() {
           selectedConversationId={selectedConversationId} 
           onSelectConversation={setSelectedConversationId}
           onOnlineUsersChange={setOnlineUserIds}
+          signalRConnection={signalRConnection}
         />
         
         <ChatScreen 
@@ -78,6 +130,7 @@ export default function App() {
           activeUser={activeUser}
           selectedContact={selectedContact}
           onlineUserIds={onlineUserIds}
+          signalRConnection={signalRConnection}
         />
       </div>
     </div>

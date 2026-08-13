@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as signalR from '@microsoft/signalr';
 
 const ALL_SAMPLE_USERS = [
   { id: 1, name: "Dr. Hana", clinicId: 1, clinicName: "Branch A" },
@@ -22,7 +21,8 @@ export default function ConversationList({
   onSelectContact,
   selectedConversationId, 
   onSelectConversation,
-  onOnlineUsersChange
+  onOnlineUsersChange,
+  signalRConnection // NEW: Shared connection from parent
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [onlineUserIds, setOnlineUserIds] = useState([]); 
@@ -30,6 +30,7 @@ export default function ConversationList({
   // NEW: State to track unread messages { conversationId: count }
   const [unreadCounts, setUnreadCounts] = useState({});
   const selectedConvRef = useRef(selectedConversationId);
+  const hasSetupListenersRef = useRef(false); // Track if listeners are already set up
 
   // 1. UPDATED: Clear badges and save the exact time we read this chat
   useEffect(() => {
@@ -85,30 +86,11 @@ export default function ConversationList({
   }, [activeUser]); // This runs once exactly when the user logs in
 
   useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5123/chathub')
-      .withAutomaticReconnect()
-      .build();
+    // NEW: Use shared connection from parent
+    if (!signalRConnection) return;
 
-    connection.start().then(async () => {
-      if (activeUser?.id) {
-        await connection.invoke('UserConnected', activeUser.id);
-
-        // NEW: Silently join the Group Chat to listen for background notifications
-        if (activeUser.clinicId === 1) {
-          await connection.invoke('JoinConversation', 101);
-        }
-
-        // NEW: Silently join all Direct Message chats to listen for background notifications
-        const colleagues = ALL_SAMPLE_USERS.filter(u => u.id !== activeUser.id && u.clinicId === activeUser.clinicId);
-        for (const contact of colleagues) {
-          const convId = getConversationIdForUsers(activeUser.id, contact.id);
-          await connection.invoke('JoinConversation', convId);
-        }
-      }
-    }).catch(err => console.error(err));
-
-    connection.on('UpdateUserStatus', (userId, isOnline) => {
+    // Only set up listeners once (not on every activeUser change)
+    signalRConnection.on('UpdateUserStatus', (userId, isOnline) => {
       setOnlineUserIds(prev => {
         const newOnlineIds = isOnline 
           ? Array.from(new Set([...prev, userId]))
@@ -124,7 +106,7 @@ export default function ConversationList({
     });
 
     // NEW: Listen for all messages globally to update the unread badges
-    connection.on('ReceiveMessage', (convId, senderId) => {
+    signalRConnection.on('ReceiveMessage', (convId, senderId) => {
       // If I didn't send it AND I am not currently looking at this specific chat
       if (senderId !== activeUser.id && convId !== selectedConvRef.current) {
         setUnreadCounts(prev => ({
@@ -135,10 +117,35 @@ export default function ConversationList({
     });
 
     return () => {
-      connection.stop();
-      connection.off('ReceiveMessage');
+      // Clean up listeners
+      signalRConnection.off('UpdateUserStatus');
+      signalRConnection.off('ReceiveMessage');
     };
-  }, [activeUser]);
+  }, [signalRConnection]); // Only depend on signalRConnection, not activeUser
+
+  // Separate effect to join conversations when activeUser changes
+  useEffect(() => {
+    if (!signalRConnection || !activeUser?.id) return;
+
+    const joinConversations = async () => {
+      // Don't call UserConnected here - it's handled in App.jsx only
+      // Just join the conversations for unread badge tracking
+
+      // NEW: Silently join the Group Chat to listen for background notifications
+      if (activeUser.clinicId === 1) {
+        await signalRConnection.invoke('JoinConversation', 101);
+      }
+
+      // NEW: Silently join all Direct Message chats to listen for background notifications
+      const colleagues = ALL_SAMPLE_USERS.filter(u => u.id !== activeUser.id && u.clinicId === activeUser.clinicId);
+      for (const contact of colleagues) {
+        const convId = getConversationIdForUsers(activeUser.id, contact.id);
+        await signalRConnection.invoke('JoinConversation', convId);
+      }
+    };
+
+    joinConversations().catch(err => console.error(err));
+  }, [activeUser, signalRConnection]);
 
   const singleGroup = { id: 101, isGroup: true, groupName: "Group Chat", membersCount: 3, conversationId: 101 };
 

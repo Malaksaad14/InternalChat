@@ -5,23 +5,59 @@ namespace DentaloreChat.Server.Hubs
 {
     public class ChatHub : Hub
     {
-        private static readonly ConcurrentDictionary<int, string> _onlineUsers = new ConcurrentDictionary<int, string>();
+        // Track multiple connections per user: userId -> set of connectionIds
+        private static readonly ConcurrentDictionary<int, HashSet<string>> _userConnections = new ConcurrentDictionary<int, HashSet<string>>();
 
     public async Task UserConnected(int userId)
     {
-        _onlineUsers[userId] = Context.ConnectionId;
-        // ab3t l kol l users an l user da online
-        await Clients.All.SendAsync("UpdateUserStatus", userId, true);
+        // Add this connection to the user's connection set
+        _userConnections.AddOrUpdate(userId, 
+            new HashSet<string> { Context.ConnectionId },
+            (key, existing) => 
+            {
+                existing.Add(Context.ConnectionId);
+                return existing;
+            });
+
+        // Only broadcast online if this is the first connection for this user
+        if (_userConnections[userId].Count == 1)
+        {
+            await Clients.All.SendAsync("UpdateUserStatus", userId, true);
+        }
+    }
+
+    public async Task UserDisconnected(int userId)
+    {
+        // Only remove the current connection from the user's set
+        if (_userConnections.TryGetValue(userId, out var connections))
+        {
+            connections.Remove(Context.ConnectionId);
+            
+            // If no more connections for this user, mark as offline
+            if (connections.Count == 0)
+            {
+                _userConnections.TryRemove(userId, out _);
+                await Clients.All.SendAsync("UpdateUserStatus", userId, false);
+            }
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-       //lw l user mb2ash connected, remove mn l online users w ab3t l kol l users an l user da offline
-        var userPair = _onlineUsers.FirstOrDefault(x => x.Value == Context.ConnectionId);
-        if (userPair.Key != 0)
+        // Find which user this connection belongs to
+        var userId = _userConnections.FirstOrDefault(x => x.Value.Contains(Context.ConnectionId)).Key;
+        
+        if (userId != 0)
         {
-            _onlineUsers.TryRemove(userPair.Key, out _);
-            await Clients.All.SendAsync("UpdateUserStatus", userPair.Key, false);
+            // Remove this connection from the user's set
+            _userConnections[userId].Remove(Context.ConnectionId);
+            
+            // If no more connections for this user, mark as offline
+            if (_userConnections[userId].Count == 0)
+            {
+                _userConnections.TryRemove(userId, out _);
+                await Clients.All.SendAsync("UpdateUserStatus", userId, false);
+            }
         }
 
         await base.OnDisconnectedAsync(exception);

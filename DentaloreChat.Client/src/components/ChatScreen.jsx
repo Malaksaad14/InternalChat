@@ -45,28 +45,27 @@ function formatDateDivider(timestamp) {
 // Initial shared conversation feeds
 const INITIAL_HISTORIES = {};
 
-export default function ChatScreen({ conversationId, activeUser, selectedContact, onlineUserIds = [] }) {
+export default function ChatScreen({ conversationId, activeUser, selectedContact, onlineUserIds = [], signalRConnection }) {
   const [chatHistories, setChatHistories] = useState(INITIAL_HISTORIES);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null); // NEW: Reference to the scrolling container
-  
-  const [connection, setConnection] = useState(null);
-  const connectionRef = useRef(null);
   
   // NEW: Pagination State
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // NEW: Error and Connection States
+  // NEW: Error State
   const [errorMsg, setErrorMsg] = useState(null);
-  const [isOffline, setIsOffline] = useState(false);
 
   const chatId = getChatKey(activeUser?.id, selectedContact);
   const isGroup = selectedContact?.isGroup;
   const contactName = selectedContact?.name || "Chat";
   const contactInitials = isGroup ? "👥" : contactName.split(' ').map(n => n[0]).join('');
+
+  // NEW: Derive online status from the shared onlineUserIds
+  const isContactOnline = selectedContact && !selectedContact.isGroup && onlineUserIds.includes(selectedContact.id);
 
   // Active messages for symmetric chat key
   const currentMessages = chatHistories[chatId] || [];
@@ -74,51 +73,6 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState('');
   const typingTimeoutRef = useRef(null);
-  
-  // Derive online status from the shared onlineUserIds
-  const isContactOnline = selectedContact && !selectedContact.isGroup && onlineUserIds.includes(selectedContact.id);
-
-  // --- NEW: WHATSAPP-STYLE MESSAGE TICKS LOGIC ---
-  const renderMessageStatus = (msg, isSent) => {
-    if (!isSent) return null; // Only show ticks on messages WE sent
-
-    // 3. READ (Two Blue Ticks)
-    if (msg.read) {
-      return (
-        <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Read">
-          <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#38bdf8" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          <svg style={{ position: 'absolute', left: '6px' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#38bdf8" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-      );
-    }
-
-    // 2. DELIVERED (Two Gray Ticks)
-    if (msg.delivered || isGroup) {
-      return (
-        <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Delivered">
-          <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          <svg style={{ position: 'absolute', left: '6px' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-      );
-    }
-
-    // 1. SENT (One Gray Tick)
-    return (
-      <div style={{ marginLeft: '6px', height: '14px', width: '14px' }} title="Sent">
-        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-    );
-  };
 
   // NEW: Reset pagination when switching between different chats
   useEffect(() => {
@@ -159,22 +113,12 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
         setChatHistories(prev => {
           const existingMessages = prev[chatId] || [];
-          
-          // Retrieve the timestamp of when the other doctor last read our chat
-          const partnerReadUpTo = parseInt(localStorage.getItem(`readUpTo_${chatId}`) || '0');
-
-          const updatedMessages = (page === 1 ? data : [...data, ...existingMessages]).map(msg => {
-            const msgTime = new Date(msg.timestamp).getTime();
-            // If the message is older than when they last looked, it is PERMANENTLY READ!
-            const isRead = msgTime <= partnerReadUpTo; 
-            
-            return { ...msg, read: isRead, delivered: true }; // DB messages are always delivered
-          });
-
-          // Also update our own read time so the Red Badge stays gone
-          localStorage.setItem(`lastReadTime_${activeUser.id}_${conversationId}`, Date.now().toString());
-
-          return { ...prev, [chatId]: updatedMessages };
+          // If page 1, replace. If page > 1, prepend older messages to the top
+          const updatedMessages = page === 1 ? data : [...data, ...existingMessages];
+          return {
+            ...prev,
+            [chatId]: updatedMessages
+          };
         });
 
         // Maintain scroll position so the UI doesn't awkwardly jump to the top
@@ -211,84 +155,40 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     }
   };
 
-  // NEW: Upgrade to 2 Gray Ticks permanently when the contact comes online
+  // Setup SignalR connection using shared connection from parent
   useEffect(() => {
-    if (isContactOnline) {
-      setChatHistories(prev => {
-        const history = prev[chatId] || [];
-        let changed = false;
-        const newHistory = history.map(msg => {
-          // If we sent it, and it isn't delivered or read yet...
-          if (msg.senderId === activeUser.id && !msg.delivered && !msg.read) {
-            changed = true;
-            localStorage.setItem(`delivered_${msg.id}`, 'true'); // Save to memory permanently
-            return { ...msg, delivered: true };
-          }
-          return msg;
-        });
-        return changed ? { ...prev, [chatId]: newHistory } : prev;
-      });
-    }
-  }, [isContactOnline, chatId, activeUser.id]);
+    if (!signalRConnection) return;
 
-  // Setup SignalR connection (Unchanged)
-  useEffect(() => {
-    const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5123/chathub')
-      .withAutomaticReconnect()
-      .build();
-
-    setConnection(newConnection);
-    connectionRef.current = newConnection;
-
-
-    newConnection.onreconnecting(() => setIsOffline(true));
-    newConnection.onreconnected(() => setIsOffline(false));
-    // UPDATED: Only show the offline banner if it was an actual error/crash!
-    newConnection.onclose((error) => {
-      if (error) {
-        setIsOffline(true);
-      }
-    });
-
-
-    const startConnection = async () => {
+    const setupConnection = async () => {
       try {
-        await newConnection.start();
-        setIsOffline(false);
+        // Join the conversation group when conversation changes
         if (conversationId) {
-          await newConnection.invoke('JoinConversation', conversationId);
-          
-          // NEW FIX: Ensure we shout "Read" the exact millisecond the connection finishes loading!
-          if (activeUser?.id) {
-             await newConnection.invoke('MarkAsRead', conversationId, activeUser.id);
-          }
+          await signalRConnection.invoke('JoinConversation', conversationId);
+          // Mark as read when joining conversation
+          await signalRConnection.invoke('MarkAsRead', conversationId, activeUser?.id);
         }
       } catch (err) {
-        console.error('SignalR Connection Error: ', err);
-        setIsOffline(true);
+        console.error('SignalR Group Join Error: ', err);
       }
     };
 
-    startConnection();
+    setupConnection();
 
-    newConnection.on('UserTyping', (userName) => {
-     if (userName !== activeUser?.name) {
-    setTypingUser(userName);
-    setIsTyping(true);
-    }
-   });
+    // Listen for typing indicators
+    signalRConnection.on('UserTyping', (userName) => {
+      if (userName !== activeUser?.name) {
+        setTypingUser(userName);
+        setIsTyping(true);
+      }
+    });
 
-   newConnection.on('UserStopTyping', () => {
-    setIsTyping(false);
-    setTypingUser('');
-   });
+    signalRConnection.on('UserStopTyping', () => {
+      setIsTyping(false);
+      setTypingUser('');
+    });
 
-   // UpdateUserStatus is now handled in ConversationList and shared via props
-   // No need to handle it here since we derive status from onlineUserIds
-   
     // Listen for incoming messages
-    newConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
+    signalRConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
       if (convId === conversationId) {
         const newMessage = {
           id: Date.now(),
@@ -310,64 +210,47 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
           };
         });
       }
-      // NEW: Tell the sender I read it!
-        if (senderId !== activeUser?.id) {
-          newConnection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
-        }
     });
 
-    // Listen for when someone else reads the chat!
-    newConnection.on('MessagesRead', (convId, readerId) => {
+    // Listen for read receipts
+    signalRConnection.on('MessagesRead', (convId, readerId) => {
       if (convId === conversationId && readerId !== activeUser?.id) {
-        
-        // Save the exact time they read it to memory forever!
-        localStorage.setItem(`readUpTo_${chatId}`, Date.now().toString());
-
-        setChatHistories(prev => {
-          const currentHistory = prev[chatId] || [];
-          const updatedHistory = currentHistory.map(msg => {
-            if (msg.senderId === activeUser?.id) {
-              return { ...msg, read: true, delivered: true };
-            }
-            return msg;
-          });
-          return { ...prev, [chatId]: updatedHistory };
-        });
+        console.log(`Conversation ${convId} marked as read by user ${readerId}`);
       }
     });
 
     return () => {
-      if (newConnection.state === signalR.HubConnectionState.Connected) {
-        newConnection.invoke('LeaveConversation', conversationId).catch(err => console.error(err));
+      if (signalRConnection.state === signalR.HubConnectionState.Connected && conversationId) {
+        signalRConnection.invoke('LeaveConversation', conversationId).catch(err => console.error(err));
       }
-      newConnection.stop();
-      newConnection.off('ReceiveMessage');
-      newConnection.off('MessagesRead');
+      signalRConnection.off('UserTyping');
+      signalRConnection.off('UserStopTyping');
+      signalRConnection.off('ReceiveMessage');
+      signalRConnection.off('MessagesRead');
     };
-  }, [conversationId, chatId, activeUser?.id, selectedContact?.id]);
+  }, [conversationId, chatId, activeUser?.id, selectedContact?.id, signalRConnection]);
 
   // Re-join conversation when conversationId changes
   useEffect(() => {
-    if (connection && conversationId && connection.state === signalR.HubConnectionState.Connected) {
-      connection.invoke('JoinConversation', conversationId).catch(err => console.error(err));
-      // NEW: Tell them I opened the chat!
-      connection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
+    if (signalRConnection && conversationId && signalRConnection.state === signalR.HubConnectionState.Connected) {
+      signalRConnection.invoke('JoinConversation', conversationId).catch(err => console.error(err));
+      signalRConnection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
     }
-  }, [conversationId, connection, activeUser]);
+  }, [conversationId, signalRConnection, activeUser]);
   
   const handleInputChange = (e) => {
   const value = e.target.value;
   setInput(value);
 
-  if (connection && connection.state === signalR.HubConnectionState.Connected) {
+  if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
     // hy2ol ll server anna bnktb
-    connection.invoke('TypingStarted', conversationId, activeUser?.name);
+    signalRConnection.invoke('TypingStarted', conversationId, activeUser?.name);
 
     // lw l user w2f ktaba l 2 seconds hyb3t notification an howa wa2f
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     
     typingTimeoutRef.current = setTimeout(() => {
-      connection.invoke('TypingStopped', conversationId, activeUser?.name);
+      signalRConnection.invoke('TypingStopped', conversationId, activeUser?.name);
     }, 2000);
   }
 };
@@ -380,8 +263,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       id: Date.now(),
       senderId: activeUser.id,
       content: input,
-      timestamp: new Date().toISOString(),
-      read: false // <-- NEW
+      timestamp: new Date().toISOString()
     };
 
     setChatHistories(prev => ({
@@ -430,20 +312,18 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     width: '6px', 
     height: '6px', 
     borderRadius: '50%', 
-    background: isOffline ? '#f59e0b' : ((isGroup || isContactOnline) ? 'var(--online-green)' : '#94a3b8'), 
+    background: (isGroup || isContactOnline) ? 'var(--online-green)' : '#94a3b8', 
     display: 'inline-block',
     marginRight: '6px'
   }}></span>
-  {isOffline 
-    ? <span style={{ color: '#f59e0b' }}>Reconnecting...</span>
-    : isTyping 
-      ? <span style={{ color: '#38bdf8', fontStyle: 'italic' }}>{typingUser} is typing...</span>
-      : (isGroup 
-          ? <span style={{ color: '#94a3b8' }}>{selectedContact.membersCount || 2} Doctors Online</span>
-          : (isContactOnline 
-              ? <span style={{ color: 'var(--online-green)' }}>Online</span> 
-              : <span style={{ color: '#94a3b8' }}>Offline</span> 
-            ))
+  {isTyping 
+    ? <span style={{ color: '#38bdf8', fontStyle: 'italic' }}>{typingUser} is typing...</span>
+    : (isGroup 
+        ? <span style={{ color: '#94a3b8' }}>{selectedContact.membersCount || 2} Doctors Online</span>
+        : (isContactOnline 
+            ? <span style={{ color: 'var(--online-green)' }}>Online</span> 
+            : <span style={{ color: '#94a3b8' }}>Offline</span> 
+          ))
   }
 </div>
           </div>
@@ -470,12 +350,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
 
 
-      {/* ERROR & CONNECTION BANNERS */}
-      {isOffline && (
-        <div style={{ background: '#f59e0b', color: '#fff', padding: '6px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>
-          ⚠️ Connecting to server...
-        </div>
-      )}
+      {/* ERROR BANNER */}
       {errorMsg && (
         <div style={{ background: '#ef4444', color: '#fff', padding: '6px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>
           ❌ {errorMsg}
@@ -536,9 +411,13 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
                     </div>
                     <div className="message-meta">
                       <span>{timeStr}</span>
-                      {/* NEW: Render the dynamic ticks */}
-                      {renderMessageStatus(msg, isSent)}
-                      
+                      {isSent && (
+                        <span className="check-icon" title="Delivered">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
