@@ -74,6 +74,45 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   const [typingUser, setTypingUser] = useState('');
   const typingTimeoutRef = useRef(null);
 
+
+  const renderMessageStatus = (msg, isSent) => {
+    if (!isSent) return null;
+
+    if (msg.read) {
+      return (
+        <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Read">
+          <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#38bdf8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg style={{ position: 'absolute', left: '6px' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#38bdf8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      );
+    }
+
+    if (msg.delivered || isContactOnline || isGroup) {
+      return (
+        <div style={{ position: 'relative', width: '20px', height: '14px', marginLeft: '6px' }} title="Delivered">
+          <svg style={{ position: 'absolute', left: 0 }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg style={{ position: 'absolute', left: '6px' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ marginLeft: '6px', height: '14px', width: '14px' }} title="Sent">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+    );
+  };
+
   // NEW: Reset pagination when switching between different chats
   useEffect(() => {
     setPage(1);
@@ -189,15 +228,19 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     // Listen for incoming messages
     signalRConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
+      // 2. Checks if the incoming message belongs to the chat she is currently looking at
       if (convId === conversationId) {
+        // 3. Packages the incoming data into a message object
         const newMessage = {
           id: Date.now(),
           senderId: senderId,
           content: content,
           timestamp: timestamp
         };
+        // 4. Updates her React state, appending the new message to her chat feed
         setChatHistories(prev => {
           const currentHistory = prev[chatId] || [];
+          // Duplicate check to prevent double-rendering bugs
           const isDuplicate = currentHistory.some(
             msg => msg.content === content && msg.senderId === senderId && 
             Math.abs(new Date(msg.timestamp) - new Date(timestamp)) < 1000
@@ -215,7 +258,17 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     // Listen for read receipts
     signalRConnection.on('MessagesRead', (convId, readerId) => {
       if (convId === conversationId && readerId !== activeUser?.id) {
-        console.log(`Conversation ${convId} marked as read by user ${readerId}`);
+        localStorage.setItem(`readUpTo_${chatId}`, Date.now().toString());
+        setChatHistories(prev => {
+          const currentHistory = prev[chatId] || [];
+          const updatedHistory = currentHistory.map(msg => {
+            if (msg.senderId === activeUser?.id) {
+              return { ...msg, read: true, delivered: true };
+            }
+            return msg;
+          });
+          return { ...prev, [chatId]: updatedHistory };
+        });
       }
     });
 
@@ -240,15 +293,18 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   
   const handleInputChange = (e) => {
   const value = e.target.value;
-  setInput(value);
+  setInput(value); // 1. Updates the local text state so the letters appear on her screen
 
+  // 2. Checks if the WebSocket connection is active and healthy
   if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
     // hy2ol ll server anna bnktb
     signalRConnection.invoke('TypingStarted', conversationId, activeUser?.name);
 
-    // lw l user w2f ktaba l 2 seconds hyb3t notification an howa wa2f
+    // 4. DEBOUNCE LOGIC: If a timer is already running, cancel it. 
+    // This prevents spamming the server with 50 requests a second while typing fast!
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
+    // 5. Sets a 2-second countdown. If she stops typing for 2 seconds, 
+    // it tells the server she stopped.
     typingTimeoutRef.current = setTimeout(() => {
       signalRConnection.invoke('TypingStopped', conversationId, activeUser?.name);
     }, 2000);
@@ -256,25 +312,30 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 };
 
   const handleSend = (e) => {
-    e.preventDefault();
-    if (!input.trim() || !activeUser?.id) return;
+    e.preventDefault(); // 1. Stops the browser from refreshing the page
+    if (!input.trim() || !activeUser?.id) return; // 2. Safety check: exits if input is empty
 
+    // 3. Creates a temporary local message object
     const newMessageObj = {
       id: Date.now(),
       senderId: activeUser.id,
       content: input,
       timestamp: new Date().toISOString()
+      
     };
 
+    // 4. Instantly draws the message on Dr. Ahmed's screen (Optimistic UI update)
     setChatHistories(prev => ({
       ...prev,
       [chatId]: [...(prev[chatId] || []), newMessageObj]
     }));
 
-    setInput('');
+    setInput(''); // 5. Clears the input typing box
 
+    // 6. Figures out which conversation ID to target (Group vs Direct Message)
     const targetConversationId = isGroup ? 101 : (typeof conversationId === 'number' ? conversationId : getConversationIdForUsers(activeUser.id, selectedContact?.id));
     
+    // 7. Sends a POST request over HTTP to the C# Backend API
     fetch('http://localhost:5123/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -411,13 +472,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
                     </div>
                     <div className="message-meta">
                       <span>{timeStr}</span>
-                      {isSent && (
-                        <span className="check-icon" title="Delivered">
-                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </span>
-                      )}
+                      {renderMessageStatus(msg, isSent)}
                     </div>
                   </div>
                 </div>
