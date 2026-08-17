@@ -32,7 +32,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Conversation>().HasData(
             new Conversation { Id = 1, ClinicId = 1, IsGroup = false },
             new Conversation { Id = 101, ClinicId = 1, IsGroup = true, GroupName = "Group Chat" },
-            new Conversation { Id = 4, ClinicId = 2, IsGroup = false } // NEW: Clinic B Conversation
+            new Conversation { Id = 4, ClinicId = 2, IsGroup = false }, // NEW: Clinic B Conversation
+            new Conversation { Id = 102, ClinicId = 2, IsGroup = true, GroupName = "Clinic B Group Chat" }
         );
 
         modelBuilder.Entity<ConversationMember>().HasData(
@@ -43,7 +44,10 @@ public class AppDbContext : DbContext
             
             // NEW: Assigning Sara and Omar to Conversation 4
             new ConversationMember { ConversationId = 4, UserId = 3 },
-            new ConversationMember { ConversationId = 4, UserId = 4 }
+            new ConversationMember { ConversationId = 4, UserId = 4 },
+            
+            new ConversationMember { ConversationId = 102, UserId = 3 },
+            new ConversationMember { ConversationId = 102, UserId = 4 }
         );
 
         modelBuilder.Entity<Message>().HasData(
@@ -53,7 +57,9 @@ public class AppDbContext : DbContext
             new Message { Id = 8, ConversationId = 101, SenderId = 2, Content = "Great to have a shared channel!", Timestamp = DateTime.UtcNow.AddMinutes(-20) },
             
             // NEW: Seed message for Branch B
-            new Message { Id = 10, ConversationId = 4, SenderId = 4, Content = "Hi Dr. Sara, checking in from Branch B!", Timestamp = DateTime.UtcNow.AddMinutes(-2) }
+            new Message { Id = 10, ConversationId = 4, SenderId = 4, Content = "Hi Dr. Sara, checking in from Branch B!", Timestamp = DateTime.UtcNow.AddMinutes(-2) },
+            
+            new Message { Id = 201, ConversationId = 102, SenderId = 3, Content = "Welcome to Branch B group chat!", Timestamp = DateTime.UtcNow.AddMinutes(-10) }
         );
     }
 }

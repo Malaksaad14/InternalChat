@@ -14,17 +14,20 @@ public class ConversationRepository : IConversationRepository
 
     public async Task<IEnumerable<Conversation>> GetConversationsByClinicIdAsync(int clinicId)
     {
-        // Removed .Include() to prevent JSON Circular Reference serialization crashes.
         // Enforces clinic-level data separation at the database level.
         return await _context.Conversations
             .Where(c => c.ClinicId == clinicId)
+            .Include(c => c.Members)
+            .ThenInclude(m => m.User)
             .ToListAsync();
     }
 
     public async Task<Conversation?> GetByIdAsync(int id)
     {
-        // Removed .Include() to prevent JSON Circular Reference serialization crashes.
         return await _context.Conversations
+            .Include(c => c.Members)
+            .ThenInclude(m => m.User)
+            .Include(c => c.Messages)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 

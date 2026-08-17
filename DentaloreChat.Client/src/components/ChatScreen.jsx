@@ -333,7 +333,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     setInput(''); // 5. Clears the input typing box
 
     // 6. Figures out which conversation ID to target (Group vs Direct Message)
-    const targetConversationId = isGroup ? 101 : (typeof conversationId === 'number' ? conversationId : getConversationIdForUsers(activeUser.id, selectedContact?.id));
+    const targetConversationId = conversationId;
     
     // 7. Sends a POST request over HTTP to the C# Backend API
     fetch('http://localhost:5123/api/messages', {
@@ -364,28 +364,25 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
             <div className="avatar" style={{ background: isGroup ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : undefined }}>
               {contactInitials}
             </div>
-            {(isGroup || isContactOnline) && <div className="status-dot"></div>}
+            
           </div>
           <div>
             <div className="chat-header-name">{contactName}</div>
 <div className="chat-header-status">
-  <span style={{ 
-    width: '6px', 
-    height: '6px', 
-    borderRadius: '50%', 
-    background: (isGroup || isContactOnline) ? 'var(--online-green)' : '#94a3b8', 
-    display: 'inline-block',
-    marginRight: '6px'
-  }}></span>
   {isTyping 
     ? <span style={{ color: '#38bdf8', fontStyle: 'italic' }}>{typingUser} is typing...</span>
-    : (isGroup 
-        ? <span style={{ color: '#94a3b8' }}>{selectedContact.membersCount || 2} Doctors Online</span>
+     :(isGroup
+     ? <span style={{ color: '#94a3b8' }}>
+    {selectedContact.members 
+      ? selectedContact.members.map(m => m.user?.name).filter(Boolean).join(', ')
+      : 'Group Chat'
+    }
+  </span>
         : (isContactOnline 
             ? <span style={{ color: 'var(--online-green)' }}>Online</span> 
             : <span style={{ color: '#94a3b8' }}>Offline</span> 
           ))
-  }
+ }
 </div>
           </div>
         </div>

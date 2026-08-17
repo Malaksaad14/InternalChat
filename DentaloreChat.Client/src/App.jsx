@@ -14,8 +14,8 @@ const ALL_SAMPLE_USERS = [
 
 export default function App() {
   const [activeUser, setActiveUser] = useState(ALL_SAMPLE_USERS[0]);
-  const [selectedConversationId, setSelectedConversationId] = useState(1);
-  const [selectedContact, setSelectedContact] = useState(ALL_SAMPLE_USERS[1]);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+  const [selectedContact, setSelectedContact] = useState(null);
   const [onlineUserIds, setOnlineUserIds] = useState([]);
   const [signalRConnection, setSignalRConnection] = useState(null);
   const previousUserIdRef = useRef(null);
@@ -76,19 +76,8 @@ export default function App() {
       u => u.id !== newUser.id && u.clinicId === newUser.clinicId
     );
     
-    // Assign a default contact. If Clinic 2 has no valid colleagues, this becomes null.
-    const defaultContact = newUser.clinicId === 1 
-      ? { id: 101, isGroup: true, groupName: "Group Chat" } 
-      : (validColleagues.length > 0 ? validColleagues[0] : null);
-
-    setSelectedContact(defaultContact);
-
-    if (defaultContact) {
-      const newConvId = defaultContact.isGroup ? 101 : getConversationIdForUsers(newUser.id, defaultContact.id);
-      setSelectedConversationId(newConvId);
-    } else {
-      setSelectedConversationId(null);
-    }
+    setSelectedContact(null);
+    setSelectedConversationId(null);
   };
 
   function getConversationIdForUsers(userId1, userId2) {

@@ -26,6 +26,7 @@ export default function ConversationList({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [onlineUserIds, setOnlineUserIds] = useState([]); 
+  const [groups, setGroups] = useState([]);
 
   // NEW: State to track unread messages { conversationId: count }
   const [unreadCounts, setUnreadCounts] = useState({});
@@ -41,6 +42,24 @@ export default function ConversationList({
       localStorage.setItem(`lastReadTime_${activeUser.id}_${selectedConversationId}`, Date.now().toString());
     }
   }, [selectedConversationId, activeUser]);
+// everytime the active user changes it calls your API 
+// and gets all conversations for their clinic
+// and keep only the groups 
+  useEffect(() => {
+  const fetchGroups = async () => {
+    if (!activeUser?.clinicId) return;
+    try {
+      const response = await fetch(`http://localhost:5123/api/conversations/clinic/${activeUser.clinicId}`);
+      const data = await response.json();
+      // Filter only group conversations
+      const groupConversations = data.filter(c => c.isGroup === true);
+      setGroups(groupConversations);
+    } catch (err) {
+      console.error("Failed to fetch groups", err);
+    }
+  };
+  fetchGroups();
+}, [activeUser]);
 
   // 2. NEW: Background Fetch to check for missed offline messages when logging in!
   useEffect(() => {
@@ -128,12 +147,9 @@ export default function ConversationList({
     if (!signalRConnection || !activeUser?.id) return;
 
     const joinConversations = async () => {
-      // Don't call UserConnected here - it's handled in App.jsx only
-      // Just join the conversations for unread badge tracking
-
-      // NEW: Silently join the Group Chat to listen for background notifications
-      if (activeUser.clinicId === 1) {
-        await signalRConnection.invoke('JoinConversation', 101);
+      
+      for (const group of groups) {
+        await signalRConnection.invoke('JoinConversation', group.id);
       }
 
       // NEW: Silently join all Direct Message chats to listen for background notifications
@@ -147,8 +163,7 @@ export default function ConversationList({
     joinConversations().catch(err => console.error(err));
   }, [activeUser, signalRConnection]);
 
-  const singleGroup = { id: 101, isGroup: true, groupName: "Group Chat", membersCount: 3, conversationId: 101 };
-
+  
   const otherUsers = ALL_SAMPLE_USERS.filter(u => 
     u.id !== activeUser.id && u.clinicId === activeUser.clinicId
   );
@@ -189,47 +204,54 @@ export default function ConversationList({
         </div>
       </div>
 
-      {activeUser.clinicId === 1 && (
-        <div className="category-list">
-          <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
-            CLINIC CHANNELS
+{groups.length > 0 && (
+  <div className="category-list">
+    <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
+      CLINIC CHANNELS
+    </div>
+    
+    {groups.map(group => {
+      const isSelected = selectedContact?.isGroup && selectedContact?.id === group.id;
+      const groupUnread = unreadCounts[group.id] || 0;
+      const memberCount = group.members ? group.members.length : 0;
+      
+      return (
+        <div 
+          key={group.id}
+          className={`category-item ${isSelected ? 'active' : ''}`}
+          onClick={() => {
+            onSelectContact({ id: group.id, isGroup: true, groupName: group.groupName,members: group.members });
+            onSelectConversation(group.id);
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="category-left">
+            <div className="category-icon" style={{ background: 'linear-gradient(135deg, #0284c7, #06b6d4)', color: '#fff' }}>
+              👥
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)' }}>
+                {group.groupName}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                {memberCount} Members
+              </div>
+            </div>
           </div>
           
-          <div 
-            className={`category-item ${isGroupSelected ? 'active' : ''}`}
-            onClick={() => {
-              onSelectContact(singleGroup);
-              onSelectConversation(singleGroup.id);
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="category-left">
-              <div className="category-icon" style={{ background: 'linear-gradient(135deg, #0284c7, #06b6d4)', color: '#fff' }}>
-                👥
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="badge">Group</div>
+            {groupUnread > 0 && (
+              <div style={{ background: '#ef4444', color: '#fff', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>
+                {groupUnread}
               </div>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)' }}>
-                  {singleGroup.groupName}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                  2 Members • Medical Team
-                </div>
-              </div>
-            </div>
-            
-            {/* NEW: Group Unread Badge Layout */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div className="badge">Group</div>
-              {groupUnread > 0 && (
-                <div style={{ background: '#ef4444', color: '#fff', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>
-                  {groupUnread}
-                </div>
-              )}
-            </div>
-
+            )}
           </div>
         </div>
-      )}
+      );
+    })}
+  </div>
+)}
 
       <div className="sidebar-section-divider">
         <span className="section-label">DIRECT MESSAGES</span>
