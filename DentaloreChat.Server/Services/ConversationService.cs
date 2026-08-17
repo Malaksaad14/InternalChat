@@ -17,4 +17,19 @@ public class ConversationService : IConversationService
     {
         return await _conversationRepo.GetByIdAsync(conversationId);
     }
+
+    public async Task<Conversation> CreateGroupAsync(CreateGroupDto dto)
+{
+    var conversation = new Conversation
+    {
+        IsGroup = true,
+        GroupName = dto.GroupName,
+        ClinicId = dto.ClinicId,
+        Members = dto.MemberIds.Select(id => new ConversationMember { UserId = id }).ToList()
+    };
+
+    await _conversationRepo.AddAsync(conversation);
+    return conversation;
+}
+
 }

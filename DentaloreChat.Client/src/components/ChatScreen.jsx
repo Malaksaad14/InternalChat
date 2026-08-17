@@ -228,6 +228,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     // Listen for incoming messages
     signalRConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
+      debugger; 
       // 2. Checks if the incoming message belongs to the chat she is currently looking at
       if (convId === conversationId) {
         // 3. Packages the incoming data into a message object

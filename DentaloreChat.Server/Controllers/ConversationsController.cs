@@ -25,4 +25,15 @@ public class ConversationsController : ControllerBase
         if (conversation == null) return NotFound();
         return Ok(conversation);
     }
+
+    [HttpPost("group")]
+public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDto dto)
+{
+    if (string.IsNullOrWhiteSpace(dto.GroupName) || dto.MemberIds == null || !dto.MemberIds.Any())
+        return BadRequest("Group name and members are required.");
+
+    var newGroup = await _conversationService.CreateGroupAsync(dto);
+    return Ok(newGroup);
+}
+
 }

@@ -5,10 +5,30 @@
     "version": "0.2.0",
     "configurations": [
     {
+      "name": "Debug C# Server",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/DentaloreChat.Server/bin/Debug/net8.0/DentaloreChat.Server.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/DentaloreChat.Server",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+          "action": "openExternally",
+          "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+          "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
       "type": "chrome",
       "request": "launch",
       "name": "Debug React in VS Code",
-      "url": "http://localhost:5174",
+      "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}",
       "sourceMapPathOverrides": {
         "webpack:///./*": "${workspaceFolder}/*",

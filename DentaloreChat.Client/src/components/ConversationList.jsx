@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
+import CreateGroupModal from './CreateGroupModal';
 const ALL_SAMPLE_USERS = [
   { id: 1, name: "Dr. Hana", clinicId: 1, clinicName: "Branch A" },
   { id: 2, name: "Dr. Ahmed", clinicId: 1, clinicName: "Branch A" },
@@ -32,6 +32,8 @@ export default function ConversationList({
   const [unreadCounts, setUnreadCounts] = useState({});
   const selectedConvRef = useRef(selectedConversationId);
   const hasSetupListenersRef = useRef(false); // Track if listeners are already set up
+// to track if the modal is open
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
   // 1. UPDATED: Clear badges and save the exact time we read this chat
   useEffect(() => {
@@ -206,10 +208,18 @@ export default function ConversationList({
         </div>
       </div>
 
-{groups.length > 0 && (
   <div className="category-list">
-    <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
-      CLINIC CHANNELS
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+      <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        CLINIC CHANNELS
+      </div>
+      <button 
+        onClick={() => setShowCreateGroupModal(true)}
+        style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '16px', lineHeight: '1' }}
+        title="Create New Group"
+      >
+        +
+      </button>
     </div>
     
     {groups.map(group => {
@@ -250,10 +260,10 @@ export default function ConversationList({
             )}
           </div>
         </div>
+        
       );
     })}
   </div>
-)}
 
       <div className="sidebar-section-divider">
         <span className="section-label">DIRECT MESSAGES</span>
@@ -352,6 +362,18 @@ export default function ConversationList({
           })}
         </div>
       </div>
+
+      {/* Render the Create Group Modal if open */}
+      {showCreateGroupModal && (
+        <CreateGroupModal 
+          activeUser={activeUser} 
+          onClose={() => setShowCreateGroupModal(false)} 
+          onGroupCreated={() => {
+             // Reload the page to refresh the groups list and signalR connection
+             window.location.reload(); 
+          }} 
+        />
+      )}
     </div>
   );
 }
