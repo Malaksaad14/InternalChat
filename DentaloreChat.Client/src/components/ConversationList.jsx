@@ -115,10 +115,12 @@ export default function ConversationList({
           ? Array.from(new Set([...prev, userId]))
           : prev.filter(id => id !== userId);
         
-        // Notify parent component
-        if (onOnlineUsersChange) {
-          onOnlineUsersChange(newOnlineIds);
-        }
+        // Defer parent notification to prevent render-phase state conflicts
+        setTimeout(() => {
+          if (onOnlineUsersChange) {
+            onOnlineUsersChange(newOnlineIds);
+          }
+        }, 0);
         
         return newOnlineIds;
       });

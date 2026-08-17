@@ -312,6 +312,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 };
 
   const handleSend = (e) => {
+    debugger; // <--- The native browser breakpoint
     e.preventDefault(); // 1. Stops the browser from refreshing the page
     if (!input.trim() || !activeUser?.id) return; // 2. Safety check: exits if input is empty
 
