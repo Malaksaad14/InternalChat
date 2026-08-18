@@ -33,7 +33,9 @@ public class MessagesController : ControllerBase
         var savedMessage = await _messageService.SendMessageAsync(message);
         
         // Broadcast the message to all clients in the conversation
-        await _hubContext.Clients.Group($"conversation_{savedMessage.ConversationId}")
+        //_ =  is C#'s "discard" operator, tells the compiler: I know this is an async task,
+        // but I don't want to await it. Just run it in the background.
+        _= _hubContext.Clients.Group($"conversation_{savedMessage.ConversationId}")
             .SendAsync("ReceiveMessage", savedMessage.ConversationId, savedMessage.SenderId, savedMessage.Content, savedMessage.Timestamp);
         
         return Ok(savedMessage);
