@@ -54,7 +54,7 @@ export default function App() {
       
       // Connect new user
       if (activeUser?.id) {
-        signalRConnection.invoke('UserConnected', activeUser.id).catch(err => console.error(err));
+        signalRConnection.invoke('UserConnected', activeUser.id, activeUser.clinicId).catch(err => console.error(err));
         previousUserIdRef.current = activeUser.id;
       }
     }
@@ -63,7 +63,7 @@ export default function App() {
   // Initial connection - connect first user when SignalR is ready
   useEffect(() => {
     if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected && activeUser?.id && previousUserIdRef.current === null) {
-      signalRConnection.invoke('UserConnected', activeUser.id).catch(err => console.error(err));
+      signalRConnection.invoke('UserConnected', activeUser.id, activeUser.clinicId).catch(err => console.error(err));
       previousUserIdRef.current = activeUser.id;
     }
   }, [signalRConnection, activeUser]);

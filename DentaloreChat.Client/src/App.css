@@ -81,6 +81,12 @@
   height: 100%;
 }
 
+/* Slim custom scrollbar for the sidebar */
+.sidebar ::-webkit-scrollbar { width: 4px; }
+.sidebar ::-webkit-scrollbar-track { background: transparent; }
+.sidebar ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+.sidebar ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
 .sidebar-header {
   padding: 20px;
   display: flex;

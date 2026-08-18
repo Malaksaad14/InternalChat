@@ -32,4 +32,16 @@ public class ConversationService : IConversationService
     return conversation;
 }
 
+public async Task<Conversation?> DeleteGroupAsync(int conversationId)
+{
+    var conversation = await _conversationRepo.GetByIdAsync(conversationId);
+    if (conversation != null && conversation.IsGroup)
+    {
+        await _conversationRepo.DeleteAsync(conversation);
+        return conversation;
+    }
+    return null;
+}
+
+
 }

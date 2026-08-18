@@ -47,7 +47,6 @@ export default function ConversationList({
 // everytime the active user changes it calls your API 
 // and gets all conversations for their clinic
 // and keep only the groups 
-  useEffect(() => {
   const fetchGroups = async () => {
     if (!activeUser?.clinicId) return;
     try {
@@ -60,8 +59,11 @@ export default function ConversationList({
       console.error("Failed to fetch groups", err);
     }
   };
-  fetchGroups();
-}, [activeUser]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [activeUser]);
+
 
   // 2. NEW: Background Fetch to check for missed offline messages when logging in!
   useEffect(() => {
@@ -138,13 +140,37 @@ export default function ConversationList({
         }));
       }
     });
+   
+    signalRConnection.on('GroupCreated', (groupId, groupName, memberIds) => {
+      // Only refresh if the active user is a member of the new group
+      if (memberIds.includes(activeUser.id)) {
+        // Re-fetch from API to get full data including members
+        fetchGroups();
+
+        // Also join the new group's SignalR room so we get its messages
+        signalRConnection.invoke('JoinConversation', groupId);
+      }
+    });
+
+    signalRConnection.on('GroupDeleted', (groupId) => {
+  // Remove the deleted group from the list instantly
+  setGroups(prev => prev.filter(g => g.id !== groupId));
+
+  // Optional: If the user was currently looking at the deleted group, clear their screen
+  if (selectedConvRef.current === groupId) {
+    onSelectContact(null);
+    onSelectConversation(null);
+  }
+});
 
     return () => {
       // Clean up listeners
       signalRConnection.off('UpdateUserStatus');
       signalRConnection.off('ReceiveMessage');
+      signalRConnection.off('GroupCreated');
+      signalRConnection.off('GroupDeleted');
     };
-  }, [signalRConnection]); // Only depend on signalRConnection, not activeUser
+  }, [signalRConnection, activeUser]); 
 
   // Separate effect to join conversations when activeUser changes
   useEffect(() => {
@@ -208,6 +234,9 @@ export default function ConversationList({
         </div>
       </div>
 
+      {/* Scrollable middle area */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+
   <div className="category-list">
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
       <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -258,6 +287,23 @@ export default function ConversationList({
                 {groupUnread}
               </div>
             )}
+
+              {/* NEW: The Delete Button */}
+  <button 
+    onClick={(e) => {
+      e.stopPropagation(); // Prevents the group from being selected when you click delete
+      if (window.confirm("Are you sure you want to delete this group?")) {
+        fetch(`http://localhost:5123/api/conversations/group/${group.id}`, { method: 'DELETE' });
+      }
+    }}
+    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 4px' }}
+    title="Delete Group"
+  >
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  </button>
+
           </div>
         </div>
         
@@ -331,6 +377,8 @@ export default function ConversationList({
         })}
       </div>
 
+      </div>{/* end scrollable middle area */}
+
       {/* Bottom Switcher */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
         <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 'bold' }}>
@@ -369,8 +417,6 @@ export default function ConversationList({
           activeUser={activeUser} 
           onClose={() => setShowCreateGroupModal(false)} 
           onGroupCreated={() => {
-             // Reload the page to refresh the groups list and signalR connection
-             window.location.reload(); 
           }} 
         />
       )}

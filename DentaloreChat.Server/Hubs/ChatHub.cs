@@ -8,7 +8,7 @@ namespace DentaloreChat.Server.Hubs
         // Track multiple connections per user: userId -> set of connectionIds
         private static readonly ConcurrentDictionary<int, HashSet<string>> _userConnections = new ConcurrentDictionary<int, HashSet<string>>();
 
-    public async Task UserConnected(int userId)
+    public async Task UserConnected(int userId, int clinicId)
     {
         // Add this connection to the user's connection set
         _userConnections.AddOrUpdate(userId, 
@@ -18,6 +18,8 @@ namespace DentaloreChat.Server.Hubs
                 existing.Add(Context.ConnectionId);
                 return existing;
             });
+        //join the clinic room to receive clinic-wide broadcasts
+         await Groups.AddToGroupAsync(Context.ConnectionId, $"clinic_{clinicId}");
 
         // Only broadcast online if this is the first connection for this user
         if (_userConnections[userId].Count == 1)

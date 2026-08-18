@@ -36,6 +36,12 @@ public class ConversationRepository : IConversationRepository
         await _context.Conversations.AddAsync(conversation);
         await _context.SaveChangesAsync();
     }
+
+    public async Task DeleteAsync(Conversation conversation)
+    {
+        _context.Conversations.Remove(conversation);
+        await _context.SaveChangesAsync();
+    }
 }
 
 

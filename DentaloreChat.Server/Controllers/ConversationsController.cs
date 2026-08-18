@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using DentaloreChat.Server.Hubs;
 
 [Route("api/[controller]")]
 [ApiController]
 public class ConversationsController : ControllerBase
 {
     private readonly IConversationService _conversationService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public ConversationsController(IConversationService conversationService)
+    public ConversationsController(IConversationService conversationService, IHubContext<ChatHub> hubContext)
     {
         _conversationService = conversationService;
+        _hubContext = hubContext;
     }
 
     [HttpGet("clinic/{clinicId}")]
@@ -27,13 +31,32 @@ public class ConversationsController : ControllerBase
     }
 
     [HttpPost("group")]
-public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDto dto)
-{
-    if (string.IsNullOrWhiteSpace(dto.GroupName) || dto.MemberIds == null || !dto.MemberIds.Any())
-        return BadRequest("Group name and members are required.");
+    public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.GroupName) || dto.MemberIds == null || !dto.MemberIds.Any())
+            return BadRequest("Group name and members are required.");
 
-    var newGroup = await _conversationService.CreateGroupAsync(dto);
-    return Ok(newGroup);
+        var newGroup = await _conversationService.CreateGroupAsync(dto);
+
+        // Broadcast to everyone in this clinic so their sidebar updates instantly (no refresh needed)
+        await _hubContext.Clients.Group($"clinic_{dto.ClinicId}")
+            .SendAsync("GroupCreated", newGroup.Id, newGroup.GroupName, dto.MemberIds);
+
+        return Ok(newGroup);
+    }
+  [HttpDelete("group/{id}")]
+public async Task<IActionResult> DeleteGroup(int id)
+{
+    var deletedGroup = await _conversationService.DeleteGroupAsync(id);
+    
+    if (deletedGroup == null) return NotFound("Group not found or is not a group.");
+
+    // Broadcast to the clinic that this group was deleted
+    await _hubContext.Clients.Group($"clinic_{deletedGroup.ClinicId}")
+        .SendAsync("GroupDeleted", deletedGroup.Id);
+
+    return Ok();
 }
+
 
 }
