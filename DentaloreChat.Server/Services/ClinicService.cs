@@ -7,7 +7,7 @@ public class ClinicService : IClinicService
         _clinicRepo = clinicRepo;
     }
 
-    public async Task<Clinic?> GetClinicByIdAsync(int id)
+    public async Task<Clinic?> GetClinicByIdAsync(Guid id)
     {
         return await _clinicRepo.GetByIdAsync(id);
     }

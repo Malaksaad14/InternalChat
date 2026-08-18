@@ -12,7 +12,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("clinic/{clinicId}")]
-    public async Task<IActionResult> GetUsersByClinic(int clinicId)
+    public async Task<IActionResult> GetUsersByClinic(Guid clinicId)
     {
         var users = await _userService.GetUsersByClinicAsync(clinicId);
         return Ok(users);

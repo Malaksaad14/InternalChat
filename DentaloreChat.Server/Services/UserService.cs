@@ -7,12 +7,12 @@ public class UserService : IUserService
         _userRepo = userRepo;
     }
 
-    public async Task<User?> GetUserByIdAsync(int id)
+    public async Task<User?> GetUserByIdAsync(Guid id)
     {
         return await _userRepo.GetByIdAsync(id);
     }
 
-    public async Task<IEnumerable<User>> GetUsersByClinicAsync(int clinicId)
+    public async Task<IEnumerable<User>> GetUsersByClinicAsync(Guid clinicId)
     {
         return await _userRepo.GetUsersByClinicIdAsync(clinicId);
     }

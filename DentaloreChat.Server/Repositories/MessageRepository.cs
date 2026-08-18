@@ -10,7 +10,7 @@ public class MessageRepository : IMessageRepository
     }
 
     // UPDATED: Added page and pageSize for pagination
-    public async Task<IEnumerable<Message>> GetMessagesByConversationIdAsync(int conversationId, int page = 1, int pageSize = 20)
+    public async Task<IEnumerable<Message>> GetMessagesByConversationIdAsync(Guid conversationId, int page = 1, int pageSize = 20)
     {
         var messages = await _context.Messages
             .Where(m => m.ConversationId == conversationId)

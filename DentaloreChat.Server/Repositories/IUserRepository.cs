@@ -1,5 +1,5 @@
 public interface IUserRepository
 {
-    Task<User?> GetByIdAsync(int id);
-    Task<IEnumerable<User>> GetUsersByClinicIdAsync(int clinicId);
+    Task<User?> GetByIdAsync(Guid id);
+    Task<IEnumerable<User>> GetUsersByClinicIdAsync(Guid clinicId);
 }

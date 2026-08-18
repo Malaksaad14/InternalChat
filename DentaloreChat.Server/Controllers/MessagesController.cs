@@ -17,7 +17,7 @@ public class MessagesController : ControllerBase
 
     // UPDATED: Accepts query parameters for pagination
     [HttpGet("{conversationId}")]
-    public async Task<IActionResult> GetHistory(int conversationId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetHistory(Guid conversationId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         
         var messages = await _messageService.GetHistoryAsync(conversationId, page, pageSize);

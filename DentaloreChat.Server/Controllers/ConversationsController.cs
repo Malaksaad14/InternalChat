@@ -16,14 +16,14 @@ public class ConversationsController : ControllerBase
     }
 
     [HttpGet("clinic/{clinicId}")]
-    public async Task<IActionResult> GetClinicConversations(int clinicId)
+    public async Task<IActionResult> GetClinicConversations(Guid clinicId)
     {
         var conversations = await _conversationService.GetClinicConversationsAsync(clinicId);
         return Ok(conversations);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetConversationDetails(int id)
+    public async Task<IActionResult> GetConversationDetails(Guid id)
     {
         var conversation = await _conversationService.GetConversationDetailsAsync(id);
         if (conversation == null) return NotFound();
@@ -38,21 +38,21 @@ public class ConversationsController : ControllerBase
 
         var newGroup = await _conversationService.CreateGroupAsync(dto);
 
-        // Broadcast to everyone in this clinic so their sidebar updates instantly (no refresh needed)
-        await _hubContext.Clients.Group($"clinic_{dto.ClinicId}")
+        // Broadcast to everyone in this clinic so their sidebar updates instantly 
+       _= _hubContext.Clients.Group($"clinic_{dto.ClinicId}")
             .SendAsync("GroupCreated", newGroup.Id, newGroup.GroupName, dto.MemberIds);
 
         return Ok(newGroup);
     }
   [HttpDelete("group/{id}")]
-public async Task<IActionResult> DeleteGroup(int id)
+public async Task<IActionResult> DeleteGroup(Guid id)
 {
     var deletedGroup = await _conversationService.DeleteGroupAsync(id);
     
     if (deletedGroup == null) return NotFound("Group not found or is not a group.");
 
     // Broadcast to the clinic that this group was deleted
-    await _hubContext.Clients.Group($"clinic_{deletedGroup.ClinicId}")
+    _= _hubContext.Clients.Group($"clinic_{deletedGroup.ClinicId}")
         .SendAsync("GroupDeleted", deletedGroup.Id);
 
     return Ok();

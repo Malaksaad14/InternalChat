@@ -12,7 +12,7 @@ public class ClinicsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetClinic(int id)
+    public async Task<IActionResult> GetClinic(Guid id)
     {
         var clinic = await _clinicService.GetClinicByIdAsync(id);
         if (clinic == null) return NotFound();

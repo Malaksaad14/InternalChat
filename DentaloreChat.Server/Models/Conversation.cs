@@ -1,11 +1,11 @@
 public class Conversation
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public bool IsGroup { get; set; } = false;
     public string? GroupName { get; set; }
     
     // Clinic scope to enforce security and separation
-    public int ClinicId { get; set; }
+    public Guid ClinicId { get; set; } = Guid.NewGuid();
     
     public ICollection<ConversationMember>? Members { get; set; }
     public ICollection<Message>? Messages { get; set; }

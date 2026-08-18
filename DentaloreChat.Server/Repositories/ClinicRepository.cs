@@ -9,7 +9,7 @@ public class ClinicRepository : IClinicRepository
         _context = context;
     }
 
-    public async Task<Clinic?> GetByIdAsync(int id)
+    public async Task<Clinic?> GetByIdAsync(Guid id)
     {
         // Fetch a specific clinic along with its users for clinic-level scoping
         return await _context.Clinics

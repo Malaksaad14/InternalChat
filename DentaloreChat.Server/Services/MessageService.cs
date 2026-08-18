@@ -8,7 +8,7 @@ public class MessageService : IMessageService
     }
 
     // UPDATED: Catch the 3 parameters from the controller and pass them to the repo
-    public async Task<IEnumerable<Message>> GetHistoryAsync(int conversationId, int page = 1, int pageSize = 20)
+    public async Task<IEnumerable<Message>> GetHistoryAsync(Guid conversationId, int page = 1, int pageSize = 20)
     {
         return await _messageRepo.GetMessagesByConversationIdAsync(conversationId, page, pageSize);
     }

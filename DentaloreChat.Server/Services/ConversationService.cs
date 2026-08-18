@@ -7,13 +7,13 @@ public class ConversationService : IConversationService
         _conversationRepo = conversationRepo;
     }
 
-    public async Task<IEnumerable<Conversation>> GetClinicConversationsAsync(int clinicId)
+    public async Task<IEnumerable<Conversation>> GetClinicConversationsAsync(Guid clinicId)
     {
         // Business logic layer ensures we filter by clinic scope
         return await _conversationRepo.GetConversationsByClinicIdAsync(clinicId);
     }
 
-    public async Task<Conversation?> GetConversationDetailsAsync(int conversationId)
+    public async Task<Conversation?> GetConversationDetailsAsync(Guid conversationId)
     {
         return await _conversationRepo.GetByIdAsync(conversationId);
     }
@@ -32,7 +32,7 @@ public class ConversationService : IConversationService
     return conversation;
 }
 
-public async Task<Conversation?> DeleteGroupAsync(int conversationId)
+public async Task<Conversation?> DeleteGroupAsync(Guid conversationId)
 {
     var conversation = await _conversationRepo.GetByIdAsync(conversationId);
     if (conversation != null && conversation.IsGroup)

@@ -12,7 +12,7 @@ public class ConversationRepository : IConversationRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Conversation>> GetConversationsByClinicIdAsync(int clinicId)
+    public async Task<IEnumerable<Conversation>> GetConversationsByClinicIdAsync(Guid clinicId)
     {
         // Enforces clinic-level data separation at the database level.
         return await _context.Conversations
@@ -22,7 +22,7 @@ public class ConversationRepository : IConversationRepository
             .ToListAsync();
     }
 
-    public async Task<Conversation?> GetByIdAsync(int id)
+    public async Task<Conversation?> GetByIdAsync(Guid id)
     {
         return await _context.Conversations
             .Include(c => c.Members)

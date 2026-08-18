@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentaloreChat.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260817093456_SeedClinicBGroup")]
-    partial class SeedClinicBGroup
+    [Migration("20260818125044_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,9 +21,9 @@ namespace DentaloreChat.Server.Migrations
 
             modelBuilder.Entity("Clinic", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
@@ -35,24 +35,24 @@ namespace DentaloreChat.Server.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             Name = "Dental Clinic - Branch A"
                         },
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             Name = "Dental Clinic - Branch B"
                         });
                 });
 
             modelBuilder.Entity("Conversation", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("ClinicId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("ClinicId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("GroupName")
                         .HasColumnType("TEXT");
@@ -67,27 +67,27 @@ namespace DentaloreChat.Server.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
-                            ClinicId = 1,
+                            Id = new Guid("c1111111-1111-1111-1111-111111111111"),
+                            ClinicId = new Guid("11111111-1111-1111-1111-111111111111"),
                             IsGroup = false
                         },
                         new
                         {
-                            Id = 101,
-                            ClinicId = 1,
+                            Id = new Guid("c1010101-1111-1111-1111-111111111111"),
+                            ClinicId = new Guid("11111111-1111-1111-1111-111111111111"),
                             GroupName = "Group Chat",
                             IsGroup = true
                         },
                         new
                         {
-                            Id = 4,
-                            ClinicId = 2,
+                            Id = new Guid("c4444444-4444-4444-4444-444444444444"),
+                            ClinicId = new Guid("22222222-2222-2222-2222-222222222222"),
                             IsGroup = false
                         },
                         new
                         {
-                            Id = 102,
-                            ClinicId = 2,
+                            Id = new Guid("c1020202-2222-2222-2222-222222222222"),
+                            ClinicId = new Guid("22222222-2222-2222-2222-222222222222"),
                             GroupName = "Clinic B Group Chat",
                             IsGroup = true
                         });
@@ -95,11 +95,11 @@ namespace DentaloreChat.Server.Migrations
 
             modelBuilder.Entity("ConversationMember", b =>
                 {
-                    b.Property<int>("ConversationId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ConversationId", "UserId");
 
@@ -110,60 +110,60 @@ namespace DentaloreChat.Server.Migrations
                     b.HasData(
                         new
                         {
-                            ConversationId = 1,
-                            UserId = 1
+                            ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
+                            UserId = new Guid("a1111111-1111-1111-1111-111111111111")
                         },
                         new
                         {
-                            ConversationId = 1,
-                            UserId = 2
+                            ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
+                            UserId = new Guid("a2222222-2222-2222-2222-222222222222")
                         },
                         new
                         {
-                            ConversationId = 101,
-                            UserId = 1
+                            ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
+                            UserId = new Guid("a1111111-1111-1111-1111-111111111111")
                         },
                         new
                         {
-                            ConversationId = 101,
-                            UserId = 2
+                            ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
+                            UserId = new Guid("a2222222-2222-2222-2222-222222222222")
                         },
                         new
                         {
-                            ConversationId = 4,
-                            UserId = 3
+                            ConversationId = new Guid("c4444444-4444-4444-4444-444444444444"),
+                            UserId = new Guid("a3333333-3333-3333-3333-333333333333")
                         },
                         new
                         {
-                            ConversationId = 4,
-                            UserId = 4
+                            ConversationId = new Guid("c4444444-4444-4444-4444-444444444444"),
+                            UserId = new Guid("a4444444-4444-4444-4444-444444444444")
                         },
                         new
                         {
-                            ConversationId = 102,
-                            UserId = 3
+                            ConversationId = new Guid("c1020202-2222-2222-2222-222222222222"),
+                            UserId = new Guid("a3333333-3333-3333-3333-333333333333")
                         },
                         new
                         {
-                            ConversationId = 102,
-                            UserId = 4
+                            ConversationId = new Guid("c1020202-2222-2222-2222-222222222222"),
+                            UserId = new Guid("a4444444-4444-4444-4444-444444444444")
                         });
                 });
 
             modelBuilder.Entity("Message", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Content")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ConversationId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("SenderId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
@@ -177,62 +177,62 @@ namespace DentaloreChat.Server.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("b1111111-1111-1111-1111-111111111111"),
                             Content = "Hello Dr. Ahmed, welcome to Dentalore!",
-                            ConversationId = 1,
-                            SenderId = 1,
-                            Timestamp = new DateTime(2026, 8, 17, 9, 24, 55, 498, DateTimeKind.Utc).AddTicks(7176)
+                            ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
+                            SenderId = new Guid("a1111111-1111-1111-1111-111111111111"),
+                            Timestamp = new DateTime(2026, 8, 18, 12, 40, 44, 438, DateTimeKind.Utc).AddTicks(6809)
                         },
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("b2222222-2222-2222-2222-222222222222"),
                             Content = "Hi Dr. Hana! Ready to discuss today's clinic schedule.",
-                            ConversationId = 1,
-                            SenderId = 2,
-                            Timestamp = new DateTime(2026, 8, 17, 9, 29, 55, 498, DateTimeKind.Utc).AddTicks(7184)
+                            ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
+                            SenderId = new Guid("a2222222-2222-2222-2222-222222222222"),
+                            Timestamp = new DateTime(2026, 8, 18, 12, 45, 44, 438, DateTimeKind.Utc).AddTicks(6816)
                         },
                         new
                         {
-                            Id = 7,
+                            Id = new Guid("b7777777-7777-7777-7777-777777777777"),
                             Content = "Welcome doctors to our Branch A Team Group Chat! 👋",
-                            ConversationId = 101,
-                            SenderId = 1,
-                            Timestamp = new DateTime(2026, 8, 17, 9, 9, 55, 498, DateTimeKind.Utc).AddTicks(7186)
+                            ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
+                            SenderId = new Guid("a1111111-1111-1111-1111-111111111111"),
+                            Timestamp = new DateTime(2026, 8, 18, 12, 25, 44, 438, DateTimeKind.Utc).AddTicks(6818)
                         },
                         new
                         {
-                            Id = 8,
+                            Id = new Guid("b8888888-8888-8888-8888-888888888888"),
                             Content = "Great to have a shared channel!",
-                            ConversationId = 101,
-                            SenderId = 2,
-                            Timestamp = new DateTime(2026, 8, 17, 9, 14, 55, 498, DateTimeKind.Utc).AddTicks(7187)
+                            ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
+                            SenderId = new Guid("a2222222-2222-2222-2222-222222222222"),
+                            Timestamp = new DateTime(2026, 8, 18, 12, 30, 44, 438, DateTimeKind.Utc).AddTicks(6820)
                         },
                         new
                         {
-                            Id = 10,
+                            Id = new Guid("b1010101-0000-0000-0000-000000000000"),
                             Content = "Hi Dr. Sara, checking in from Branch B!",
-                            ConversationId = 4,
-                            SenderId = 4,
-                            Timestamp = new DateTime(2026, 8, 17, 9, 32, 55, 498, DateTimeKind.Utc).AddTicks(7189)
+                            ConversationId = new Guid("c4444444-4444-4444-4444-444444444444"),
+                            SenderId = new Guid("a4444444-4444-4444-4444-444444444444"),
+                            Timestamp = new DateTime(2026, 8, 18, 12, 48, 44, 438, DateTimeKind.Utc).AddTicks(6822)
                         },
                         new
                         {
-                            Id = 201,
+                            Id = new Guid("b2010201-0000-0000-0000-000000000000"),
                             Content = "Welcome to Branch B group chat!",
-                            ConversationId = 102,
-                            SenderId = 3,
-                            Timestamp = new DateTime(2026, 8, 17, 9, 24, 55, 498, DateTimeKind.Utc).AddTicks(7191)
+                            ConversationId = new Guid("c1020202-2222-2222-2222-222222222222"),
+                            SenderId = new Guid("a3333333-3333-3333-3333-333333333333"),
+                            Timestamp = new DateTime(2026, 8, 18, 12, 40, 44, 438, DateTimeKind.Utc).AddTicks(6823)
                         });
                 });
 
             modelBuilder.Entity("User", b =>
                 {
-                    b.Property<int?>("Id")
+                    b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("ClinicId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ClinicId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
@@ -246,26 +246,26 @@ namespace DentaloreChat.Server.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
-                            ClinicId = 1,
+                            Id = new Guid("a1111111-1111-1111-1111-111111111111"),
+                            ClinicId = new Guid("11111111-1111-1111-1111-111111111111"),
                             Name = "Dr. Hana"
                         },
                         new
                         {
-                            Id = 2,
-                            ClinicId = 1,
+                            Id = new Guid("a2222222-2222-2222-2222-222222222222"),
+                            ClinicId = new Guid("11111111-1111-1111-1111-111111111111"),
                             Name = "Dr. Ahmed"
                         },
                         new
                         {
-                            Id = 3,
-                            ClinicId = 2,
+                            Id = new Guid("a3333333-3333-3333-3333-333333333333"),
+                            ClinicId = new Guid("22222222-2222-2222-2222-222222222222"),
                             Name = "Dr. Sara"
                         },
                         new
                         {
-                            Id = 4,
-                            ClinicId = 2,
+                            Id = new Guid("a4444444-4444-4444-4444-444444444444"),
+                            ClinicId = new Guid("22222222-2222-2222-2222-222222222222"),
                             Name = "Dr. Omar"
                         });
                 });
@@ -302,9 +302,7 @@ namespace DentaloreChat.Server.Migrations
                 {
                     b.HasOne("Clinic", "Clinic")
                         .WithMany("Users")
-                        .HasForeignKey("ClinicId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ClinicId");
 
                     b.Navigation("Clinic");
                 });

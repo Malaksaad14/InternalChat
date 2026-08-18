@@ -6,9 +6,9 @@ namespace DentaloreChat.Server.Hubs
     public class ChatHub : Hub
     {
         // Track multiple connections per user: userId -> set of connectionIds
-        private static readonly ConcurrentDictionary<int, HashSet<string>> _userConnections = new ConcurrentDictionary<int, HashSet<string>>();
+        private static readonly ConcurrentDictionary<Guid, HashSet<string>> _userConnections = new ConcurrentDictionary<Guid, HashSet<string>>();
 
-    public async Task UserConnected(int userId, int clinicId)
+    public async Task UserConnected(Guid userId, Guid clinicId)
     {
         // Add this connection to the user's connection set
         _userConnections.AddOrUpdate(userId, 
@@ -28,7 +28,7 @@ namespace DentaloreChat.Server.Hubs
         }
     }
 
-    public async Task UserDisconnected(int userId)
+    public async Task UserDisconnected(Guid userId)
     {
         // Only remove the current connection from the user's set
         if (_userConnections.TryGetValue(userId, out var connections))
@@ -49,7 +49,7 @@ namespace DentaloreChat.Server.Hubs
         // Find which user this connection belongs to
         var userId = _userConnections.FirstOrDefault(x => x.Value.Contains(Context.ConnectionId)).Key;
         
-        if (userId != 0)
+        if (userId != Guid.Empty)
         {
             // Remove this connection from the user's set
             _userConnections[userId].Remove(Context.ConnectionId);
@@ -64,34 +64,34 @@ namespace DentaloreChat.Server.Hubs
 
         await base.OnDisconnectedAsync(exception);
     }
-        public async Task JoinConversation(int conversationId)
+        public async Task JoinConversation(Guid conversationId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"conversation_{conversationId}");
         }
 
-        public async Task LeaveConversation(int conversationId)
+        public async Task LeaveConversation(Guid conversationId)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"conversation_{conversationId}");
         }
 
-        public async Task SendMessage(int conversationId, int senderId, string content)
+        public async Task SendMessage(Guid conversationId, Guid senderId, string content)
         {
             await Clients.Group($"conversation_{conversationId}").SendAsync("ReceiveMessage", conversationId, senderId, content, DateTime.UtcNow);
         }
-        public async Task TypingStarted(int conversationId, string userName)
+        public async Task TypingStarted(Guid conversationId, string userName)
            {
                   await Clients.Group($"conversation_{conversationId}")
                  .SendAsync("UserTyping", userName);
             }
 
-        public async Task TypingStopped(int conversationId, string userName)
+        public async Task TypingStopped(Guid conversationId, string userName)
            {
                   await Clients.Group($"conversation_{conversationId}")
                  .SendAsync("UserStopTyping", userName);
            }
         
         // NEW: Broadcasts to the chat that someone has opened/read the messages
-        public async Task MarkAsRead(int conversationId, int readerId)
+        public async Task MarkAsRead(Guid conversationId, Guid readerId)
         {
             await Clients.Group($"conversation_{conversationId}")
                  .SendAsync("MessagesRead", conversationId, readerId);

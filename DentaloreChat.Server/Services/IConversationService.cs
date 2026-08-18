@@ -1,9 +1,9 @@
 public interface IConversationService
 {
-    Task<IEnumerable<Conversation>> GetClinicConversationsAsync(int clinicId);
-    Task<Conversation?> GetConversationDetailsAsync(int conversationId);
+    Task<IEnumerable<Conversation>> GetClinicConversationsAsync(Guid clinicId);
+    Task<Conversation?> GetConversationDetailsAsync(Guid conversationId);
     Task<Conversation> CreateGroupAsync(CreateGroupDto dto);
-    Task<Conversation?> DeleteGroupAsync(int conversationId);
+    Task<Conversation?> DeleteGroupAsync(Guid conversationId);
 
 
 

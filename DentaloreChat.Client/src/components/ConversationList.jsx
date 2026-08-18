@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateGroupModal from './CreateGroupModal';
 const ALL_SAMPLE_USERS = [
-  { id: 1, name: "Dr. Hana", clinicId: 1, clinicName: "Branch A" },
-  { id: 2, name: "Dr. Ahmed", clinicId: 1, clinicName: "Branch A" },
-  { id: 3, name: "Dr. Sara", clinicId: 2, clinicName: "Branch B" },
-  { id: 4, name: "Dr. Omar", clinicId: 2, clinicName: "Branch B" }
+  { id: "a1111111-1111-1111-1111-111111111111", name: "Dr. Hana", clinicId: "11111111-1111-1111-1111-111111111111", clinicName: "Branch A" },
+  { id: "a2222222-2222-2222-2222-222222222222", name: "Dr. Ahmed", clinicId: "11111111-1111-1111-1111-111111111111", clinicName: "Branch A" },
+  { id: "a3333333-3333-3333-3333-333333333333", name: "Dr. Sara", clinicId: "22222222-2222-2222-2222-222222222222", clinicName: "Branch B" },
+  { id: "a4444444-4444-4444-4444-444444444444", name: "Dr. Omar", clinicId: "22222222-2222-2222-2222-222222222222", clinicName: "Branch B" }
 ];
 
 function getConversationIdForUsers(userId1, userId2) {
-  const ids = [userId1, userId2].sort((a, b) => a - b);
-  if (ids[0] === 1 && ids[1] === 2) return 1;
-  if (ids[0] === 3 && ids[1] === 4) return 4; 
-  return 1;
+  const ids = [userId1, userId2].sort((a, b) => a.localeCompare(b));
+  if (ids[0] === "a1111111-1111-1111-1111-111111111111" && ids[1] === "a2222222-2222-2222-2222-222222222222") 
+    return "c1111111-1111-1111-1111-111111111111";
+  if (ids[0] === "a3333333-3333-3333-3333-333333333333" && ids[1] === "a4444444-4444-4444-4444-444444444444") 
+    return "c4444444-4444-4444-4444-444444444444";
+  return "c1111111-1111-1111-1111-111111111111"; // Fallback
 }
 
 export default function ConversationList({ 

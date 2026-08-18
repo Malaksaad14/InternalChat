@@ -1,5 +1,5 @@
 public interface IClinicService
 {
-    Task<Clinic?> GetClinicByIdAsync(int id);
+    Task<Clinic?> GetClinicByIdAsync(Guid id);
     Task<IEnumerable<Clinic>> GetAllClinicsAsync();
 }

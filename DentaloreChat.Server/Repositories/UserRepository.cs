@@ -10,7 +10,7 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public async Task<User?> GetByIdAsync(Guid id)
     {
         // Fetch user by ID with their associated clinic details
         return await _context.Users
@@ -18,7 +18,7 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
-    public async Task<IEnumerable<User>> GetUsersByClinicIdAsync(int clinicId)
+    public async Task<IEnumerable<User>> GetUsersByClinicIdAsync(Guid clinicId)
     {
         // Fetch all users belonging to a specific clinic (enforces data separation)
         return await _context.Users

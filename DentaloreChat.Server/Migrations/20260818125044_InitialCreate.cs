@@ -17,8 +17,7 @@ namespace DentaloreChat.Server.Migrations
                 name: "Clinics",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -30,11 +29,10 @@ namespace DentaloreChat.Server.Migrations
                 name: "Conversations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     IsGroup = table.Column<bool>(type: "INTEGER", nullable: false),
                     GroupName = table.Column<string>(type: "TEXT", nullable: true),
-                    ClinicId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ClinicId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -45,10 +43,9 @@ namespace DentaloreChat.Server.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
-                    ClinicId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ClinicId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -57,20 +54,18 @@ namespace DentaloreChat.Server.Migrations
                         name: "FK_Users_Clinics_ClinicId",
                         column: x => x.ClinicId,
                         principalTable: "Clinics",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Content = table.Column<string>(type: "TEXT", nullable: true),
                     Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    ConversationId = table.Column<int>(type: "INTEGER", nullable: false),
-                    SenderId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ConversationId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SenderId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -87,8 +82,8 @@ namespace DentaloreChat.Server.Migrations
                 name: "ConversationMembers",
                 columns: table => new
                 {
-                    ConversationId = table.Column<int>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ConversationId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -112,8 +107,8 @@ namespace DentaloreChat.Server.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Dental Clinic - Branch A" },
-                    { 2, "Dental Clinic - Branch B" }
+                    { new Guid("11111111-1111-1111-1111-111111111111"), "Dental Clinic - Branch A" },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), "Dental Clinic - Branch B" }
                 });
 
             migrationBuilder.InsertData(
@@ -121,9 +116,10 @@ namespace DentaloreChat.Server.Migrations
                 columns: new[] { "Id", "ClinicId", "GroupName", "IsGroup" },
                 values: new object[,]
                 {
-                    { 1, 1, null, false },
-                    { 4, 2, null, false },
-                    { 101, 1, "Group Chat", true }
+                    { new Guid("c1010101-1111-1111-1111-111111111111"), new Guid("11111111-1111-1111-1111-111111111111"), "Group Chat", true },
+                    { new Guid("c1020202-2222-2222-2222-222222222222"), new Guid("22222222-2222-2222-2222-222222222222"), "Clinic B Group Chat", true },
+                    { new Guid("c1111111-1111-1111-1111-111111111111"), new Guid("11111111-1111-1111-1111-111111111111"), null, false },
+                    { new Guid("c4444444-4444-4444-4444-444444444444"), new Guid("22222222-2222-2222-2222-222222222222"), null, false }
                 });
 
             migrationBuilder.InsertData(
@@ -131,11 +127,12 @@ namespace DentaloreChat.Server.Migrations
                 columns: new[] { "Id", "Content", "ConversationId", "SenderId", "Timestamp" },
                 values: new object[,]
                 {
-                    { 1, "Hello Dr. Ahmed, welcome to Dentalore!", 1, 1, new DateTime(2026, 8, 11, 21, 15, 21, 131, DateTimeKind.Utc).AddTicks(8303) },
-                    { 2, "Hi Dr. Malak! Ready to discuss today's clinic schedule.", 1, 2, new DateTime(2026, 8, 11, 21, 20, 21, 131, DateTimeKind.Utc).AddTicks(8311) },
-                    { 7, "Welcome doctors to our Branch A Team Group Chat! 👋", 101, 1, new DateTime(2026, 8, 11, 21, 0, 21, 131, DateTimeKind.Utc).AddTicks(8313) },
-                    { 8, "Great to have a shared channel!", 101, 2, new DateTime(2026, 8, 11, 21, 5, 21, 131, DateTimeKind.Utc).AddTicks(8314) },
-                    { 10, "Hi Dr. Sara, checking in from Branch B!", 4, 4, new DateTime(2026, 8, 11, 21, 23, 21, 131, DateTimeKind.Utc).AddTicks(8316) }
+                    { new Guid("b1010101-0000-0000-0000-000000000000"), "Hi Dr. Sara, checking in from Branch B!", new Guid("c4444444-4444-4444-4444-444444444444"), new Guid("a4444444-4444-4444-4444-444444444444"), new DateTime(2026, 8, 18, 12, 48, 44, 438, DateTimeKind.Utc).AddTicks(6822) },
+                    { new Guid("b1111111-1111-1111-1111-111111111111"), "Hello Dr. Ahmed, welcome to Dentalore!", new Guid("c1111111-1111-1111-1111-111111111111"), new Guid("a1111111-1111-1111-1111-111111111111"), new DateTime(2026, 8, 18, 12, 40, 44, 438, DateTimeKind.Utc).AddTicks(6809) },
+                    { new Guid("b2010201-0000-0000-0000-000000000000"), "Welcome to Branch B group chat!", new Guid("c1020202-2222-2222-2222-222222222222"), new Guid("a3333333-3333-3333-3333-333333333333"), new DateTime(2026, 8, 18, 12, 40, 44, 438, DateTimeKind.Utc).AddTicks(6823) },
+                    { new Guid("b2222222-2222-2222-2222-222222222222"), "Hi Dr. Hana! Ready to discuss today's clinic schedule.", new Guid("c1111111-1111-1111-1111-111111111111"), new Guid("a2222222-2222-2222-2222-222222222222"), new DateTime(2026, 8, 18, 12, 45, 44, 438, DateTimeKind.Utc).AddTicks(6816) },
+                    { new Guid("b7777777-7777-7777-7777-777777777777"), "Welcome doctors to our Branch A Team Group Chat! 👋", new Guid("c1010101-1111-1111-1111-111111111111"), new Guid("a1111111-1111-1111-1111-111111111111"), new DateTime(2026, 8, 18, 12, 25, 44, 438, DateTimeKind.Utc).AddTicks(6818) },
+                    { new Guid("b8888888-8888-8888-8888-888888888888"), "Great to have a shared channel!", new Guid("c1010101-1111-1111-1111-111111111111"), new Guid("a2222222-2222-2222-2222-222222222222"), new DateTime(2026, 8, 18, 12, 30, 44, 438, DateTimeKind.Utc).AddTicks(6820) }
                 });
 
             migrationBuilder.InsertData(
@@ -143,10 +140,10 @@ namespace DentaloreChat.Server.Migrations
                 columns: new[] { "Id", "ClinicId", "Name" },
                 values: new object[,]
                 {
-                    { 1, 1, "Dr. Malak" },
-                    { 2, 1, "Dr. Ahmed" },
-                    { 3, 2, "Dr. Sara" },
-                    { 4, 2, "Dr. Omar" }
+                    { new Guid("a1111111-1111-1111-1111-111111111111"), new Guid("11111111-1111-1111-1111-111111111111"), "Dr. Hana" },
+                    { new Guid("a2222222-2222-2222-2222-222222222222"), new Guid("11111111-1111-1111-1111-111111111111"), "Dr. Ahmed" },
+                    { new Guid("a3333333-3333-3333-3333-333333333333"), new Guid("22222222-2222-2222-2222-222222222222"), "Dr. Sara" },
+                    { new Guid("a4444444-4444-4444-4444-444444444444"), new Guid("22222222-2222-2222-2222-222222222222"), "Dr. Omar" }
                 });
 
             migrationBuilder.InsertData(
@@ -154,12 +151,14 @@ namespace DentaloreChat.Server.Migrations
                 columns: new[] { "ConversationId", "UserId" },
                 values: new object[,]
                 {
-                    { 1, 1 },
-                    { 1, 2 },
-                    { 4, 3 },
-                    { 4, 4 },
-                    { 101, 1 },
-                    { 101, 2 }
+                    { new Guid("c1010101-1111-1111-1111-111111111111"), new Guid("a1111111-1111-1111-1111-111111111111") },
+                    { new Guid("c1010101-1111-1111-1111-111111111111"), new Guid("a2222222-2222-2222-2222-222222222222") },
+                    { new Guid("c1020202-2222-2222-2222-222222222222"), new Guid("a3333333-3333-3333-3333-333333333333") },
+                    { new Guid("c1020202-2222-2222-2222-222222222222"), new Guid("a4444444-4444-4444-4444-444444444444") },
+                    { new Guid("c1111111-1111-1111-1111-111111111111"), new Guid("a1111111-1111-1111-1111-111111111111") },
+                    { new Guid("c1111111-1111-1111-1111-111111111111"), new Guid("a2222222-2222-2222-2222-222222222222") },
+                    { new Guid("c4444444-4444-4444-4444-444444444444"), new Guid("a3333333-3333-3333-3333-333333333333") },
+                    { new Guid("c4444444-4444-4444-4444-444444444444"), new Guid("a4444444-4444-4444-4444-444444444444") }
                 });
 
             migrationBuilder.CreateIndex(
