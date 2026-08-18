@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using DentaloreChat.Application.Interfaces.Services;
 
 [Route("api/[controller]")]
 [ApiController]

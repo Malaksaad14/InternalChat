@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using DentaloreChat.Server.Hubs;
+using DentaloreChat.Application.Interfaces.Services;
+using DentaloreChat.Application.DTOs; // Add this if your controllers use CreateGroupDto
 
 [Route("api/[controller]")]
 [ApiController]

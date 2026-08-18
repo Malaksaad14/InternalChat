@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using DentaloreChat.Domain.Entities;
+using DentaloreChat.Application.Interfaces.Services;
+using DentaloreChat.Application.DTOs; // Add this if your controllers use CreateGroupDto
 
 namespace DentaloreChat.Server.Hubs
 {

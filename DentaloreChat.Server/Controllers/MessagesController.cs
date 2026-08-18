@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using DentaloreChat.Server.Hubs;
+using DentaloreChat.Domain.Entities;
+using DentaloreChat.Application.Interfaces.Services;
 
 [Route("api/[controller]")]
 [ApiController]

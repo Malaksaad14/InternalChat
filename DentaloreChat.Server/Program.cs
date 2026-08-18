@@ -1,11 +1,18 @@
+using DentaloreChat.Infrastructure.Data;
+using DentaloreChat.Infrastructure.Repositories;
+using DentaloreChat.Application.Services;
+using DentaloreChat.Application.Interfaces.Repositories;
+using DentaloreChat.Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using DentaloreChat.Server.Hubs;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add DbContext and configure it to use PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+    optionsBuilder => optionsBuilder.MigrationsAssembly("DentaloreChat.Infrastructure")));
 //if you hit circular reference skip it instead of crashing
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
