@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -14,16 +15,20 @@ namespace DentaloreChat.Server.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.29");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.30")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Clinic", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -46,16 +51,16 @@ namespace DentaloreChat.Server.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ClinicId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("GroupName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsGroup")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
@@ -93,10 +98,10 @@ namespace DentaloreChat.Server.Migrations
             modelBuilder.Entity("ConversationMember", b =>
                 {
                     b.Property<Guid>("ConversationId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.HasKey("ConversationId", "UserId");
 
@@ -151,19 +156,19 @@ namespace DentaloreChat.Server.Migrations
                 {
                     b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Content")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("ConversationId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("SenderId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -178,7 +183,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hello Dr. Ahmed, welcome to Dentalore!",
                             ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            Timestamp = new DateTime(2026, 8, 18, 12, 40, 44, 438, DateTimeKind.Utc).AddTicks(6809)
+                            Timestamp = new DateTime(2026, 8, 18, 15, 30, 6, 933, DateTimeKind.Utc).AddTicks(2131)
                         },
                         new
                         {
@@ -186,7 +191,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hi Dr. Hana! Ready to discuss today's clinic schedule.",
                             ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            Timestamp = new DateTime(2026, 8, 18, 12, 45, 44, 438, DateTimeKind.Utc).AddTicks(6816)
+                            Timestamp = new DateTime(2026, 8, 18, 15, 35, 6, 933, DateTimeKind.Utc).AddTicks(2148)
                         },
                         new
                         {
@@ -194,7 +199,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Welcome doctors to our Branch A Team Group Chat! 👋",
                             ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            Timestamp = new DateTime(2026, 8, 18, 12, 25, 44, 438, DateTimeKind.Utc).AddTicks(6818)
+                            Timestamp = new DateTime(2026, 8, 18, 15, 15, 6, 933, DateTimeKind.Utc).AddTicks(2154)
                         },
                         new
                         {
@@ -202,7 +207,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Great to have a shared channel!",
                             ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            Timestamp = new DateTime(2026, 8, 18, 12, 30, 44, 438, DateTimeKind.Utc).AddTicks(6820)
+                            Timestamp = new DateTime(2026, 8, 18, 15, 20, 6, 933, DateTimeKind.Utc).AddTicks(2160)
                         },
                         new
                         {
@@ -210,7 +215,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hi Dr. Sara, checking in from Branch B!",
                             ConversationId = new Guid("c4444444-4444-4444-4444-444444444444"),
                             SenderId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            Timestamp = new DateTime(2026, 8, 18, 12, 48, 44, 438, DateTimeKind.Utc).AddTicks(6822)
+                            Timestamp = new DateTime(2026, 8, 18, 15, 38, 6, 933, DateTimeKind.Utc).AddTicks(2166)
                         },
                         new
                         {
@@ -218,7 +223,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Welcome to Branch B group chat!",
                             ConversationId = new Guid("c1020202-2222-2222-2222-222222222222"),
                             SenderId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            Timestamp = new DateTime(2026, 8, 18, 12, 40, 44, 438, DateTimeKind.Utc).AddTicks(6823)
+                            Timestamp = new DateTime(2026, 8, 18, 15, 30, 6, 933, DateTimeKind.Utc).AddTicks(2176)
                         });
                 });
 
@@ -226,13 +231,13 @@ namespace DentaloreChat.Server.Migrations
                 {
                     b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("ClinicId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

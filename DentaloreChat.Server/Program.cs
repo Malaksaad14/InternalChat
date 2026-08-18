@@ -3,9 +3,9 @@ using DentaloreChat.Server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add DbContext and configure it to use SQLite
+// 1. Add DbContext and configure it to use PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 //if you hit circular reference skip it instead of crashing
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
