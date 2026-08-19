@@ -39,11 +39,13 @@ public class ConversationService : IConversationService
 
 public async Task<Conversation?> DeleteGroupAsync(Guid conversationId)
 {
+    // b search 3la l conversation de fl database
     var conversation = await _conversationRepo.GetByIdAsync(conversationId);
+    // bt check anha mawgoda f3ln w mrg3tsh null w hya group wala direct messages ashan mn3mlsh delete l direct messages
     if (conversation != null && conversation.IsGroup)
     {
         await _conversationRepo.DeleteAsync(conversation);
-        return conversation;
+        return conversation; //brg3 l deleted group l controller 3shan y broadcast l clients
     }
     return null;
 }

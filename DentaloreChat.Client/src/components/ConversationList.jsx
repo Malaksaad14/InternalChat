@@ -153,7 +153,10 @@ export default function ConversationList({
         signalRConnection.invoke('JoinConversation', groupId);
       }
     });
-
+// hena l signalR event listener
+//lma l server bynfz de Clients.Group(...).SendAsync("GroupDeleted", groupId) w yb3t
+//l event name "groupdeleted" wl group id ely l frontend byst2blo
+//l browser bta3 kol user included fl clinic de hynfz l callback function de
     signalRConnection.on('GroupDeleted', (groupId) => {
   // Remove the deleted group from the list instantly
   setGroups(prev => prev.filter(g => g.id !== groupId));
@@ -292,9 +295,11 @@ export default function ConversationList({
 
               {/* NEW: The Delete Button */}
   <button 
+ /*awl ma l user by click 3la l delete button bygy hena*/
     onClick={(e) => {
       e.stopPropagation(); // Prevents the group from being selected when you click delete
       if (window.confirm("Are you sure you want to delete this group?")) {
+        /*b3den hena byb3t http delete request ll backend(controller)*/
         fetch(`http://localhost:5123/api/conversations/group/${group.id}`, { method: 'DELETE' });
       }
     }}

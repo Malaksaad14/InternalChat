@@ -20,12 +20,12 @@ export function getChatKey(activeUserId, contact) {
 function getConversationIdForUsers(userId1, userId2) {
   const ids = [userId1, userId2].sort((a, b) => a.localeCompare(b));
   // Dr. Hana (a111) and Dr. Ahmed (a222)
-  if (ids[0] === "a1111111-1111-1111-1111-111111111111" && ids[1] === "a2222222-2222-2222-2222-222222222222") 
+  if (ids[0] === "a1111111-1111-1111-1111-111111111111" && ids[1] === "a2222222-2222-2222-2222-222222222222")
     return "c1111111-1111-1111-1111-111111111111";
   // Dr. Sara (a333) and Dr. Omar (a444)
-  if (ids[0] === "a3333333-3333-3333-3333-333333333333" && ids[1] === "a4444444-4444-4444-4444-444444444444") 
-    return "c4444444-4444-4444-4444-444444444444"; 
-  
+  if (ids[0] === "a3333333-3333-3333-3333-333333333333" && ids[1] === "a4444444-4444-4444-4444-444444444444")
+    return "c4444444-4444-4444-4444-444444444444";
+
   return "c1111111-1111-1111-1111-111111111111"; // Fallback
 }
 
@@ -55,7 +55,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null); // NEW: Reference to the scrolling container
-  
+
   // NEW: Pagination State
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -74,7 +74,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
   // Active messages for symmetric chat key
   const currentMessages = chatHistories[chatId] || [];
-  
+
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState('');
   const typingTimeoutRef = useRef(null);
@@ -139,14 +139,14 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       try {
         // Fetch specific page chunk (with the intentional typo for testing)
         const response = await fetch(`http://localhost:5123/api/messages/${conversationId}?page=${page}&pageSize=15`);
-        
+
         // NEW: Force an error if the server says 404 (Not Found) or 500 (Server Error)
         if (!response.ok) {
           throw new Error("Server returned an error status.");
         }
 
         const data = await response.json();
-          
+
         if (data.length < 15) {
           setHasMore(false); // No more older messages exist in the database
         }
@@ -171,7 +171,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
             container.scrollTop = container.scrollHeight - prevScrollHeight;
           }
         }, 0);
-        
+
       } catch (err) {
         console.error('Error fetching messages:', err);
         setErrorMsg("Failed to load messages. Please try again.");
@@ -187,15 +187,15 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   const handleScroll = (e) => {
     // We use <= 2 instead of === 0 to fix sub-pixel scrolling bugs on high-res screens
     if (e.target.scrollTop <= 2 && hasMore && !loading) {
-      
+
       // 1. Force the spinner to appear instantly!
-      setLoading(true); 
-      
+      setLoading(true);
+
       // 2. Fake Internet Lag: Wait 1.5 seconds before asking for the next page
       // (Remove the setTimeout wrapper when you want it to be instantly fast again)
       setTimeout(() => {
         setPage(prev => prev + 1);
-      }, 1500); 
+      }, 1500);
     }
   };
 
@@ -233,7 +233,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     // Listen for incoming messages
     signalRConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
-      debugger; 
+      debugger;
       // 2. Checks if the incoming message belongs to the chat she is currently looking at
       if (convId === conversationId) {
         // 3. Packages the incoming data into a message object
@@ -248,11 +248,11 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
           const currentHistory = prev[chatId] || [];
           // Duplicate check to prevent double-rendering bugs
           const isDuplicate = currentHistory.some(
-            msg => msg.content === content && msg.senderId === senderId && 
-            Math.abs(new Date(msg.timestamp) - new Date(timestamp)) < 1000
+            msg => msg.content === content && msg.senderId === senderId &&
+              Math.abs(new Date(msg.timestamp) - new Date(timestamp)) < 1000
           );
           if (isDuplicate) return prev;
-          
+
           return {
             ...prev,
             [chatId]: [...currentHistory, newMessage]
@@ -277,7 +277,15 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
         });
       }
     });
-
+    signalRConnection.on('MessageDeleted', (convId, messageId) => {
+      if (convId === conversationId) {
+        setChatHistories(prev => {
+          const currentHistory = prev[chatId] || [];
+          const updatedHistory = currentHistory.filter(msg => msg.id !== messageId);
+          return { ...prev, [chatId]: updatedHistory };
+        });
+      }
+    });
     return () => {
       if (signalRConnection.state === signalR.HubConnectionState.Connected && conversationId) {
         signalRConnection.invoke('LeaveConversation', conversationId).catch(err => console.error(err));
@@ -286,6 +294,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       signalRConnection.off('UserStopTyping');
       signalRConnection.off('ReceiveMessage');
       signalRConnection.off('MessagesRead');
+      signalRConnection.off('MessageDeleted');
     };
   }, [conversationId, chatId, activeUser?.id, selectedContact?.id, signalRConnection]);
 
@@ -296,26 +305,26 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       signalRConnection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
     }
   }, [conversationId, signalRConnection, activeUser]);
-  
+
   const handleInputChange = (e) => {
-  const value = e.target.value;
-  setInput(value); // 1. Updates the local text state so the letters appear on her screen
+    const value = e.target.value;
+    setInput(value); // 1. Updates the local text state so the letters appear on her screen
 
-  // 2. Checks if the WebSocket connection is active and healthy
-  if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
-    // hy2ol ll server anna bnktb
-    signalRConnection.invoke('TypingStarted', conversationId, activeUser?.name);
+    // 2. Checks if the WebSocket connection is active and healthy
+    if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
+      // hy2ol ll server anna bnktb
+      signalRConnection.invoke('TypingStarted', conversationId, activeUser?.name);
 
-    // 4. DEBOUNCE LOGIC: If a timer is already running, cancel it. 
-    // This prevents spamming the server with 50 requests a second while typing fast!
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    // 5. Sets a 2-second countdown. If she stops typing for 2 seconds, 
-    // it tells the server she stopped.
-    typingTimeoutRef.current = setTimeout(() => {
-      signalRConnection.invoke('TypingStopped', conversationId, activeUser?.name);
-    }, 2000);
-  }
-};
+      // 4. DEBOUNCE LOGIC: If a timer is already running, cancel it. 
+      // This prevents spamming the server with 50 requests a second while typing fast!
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      // 5. Sets a 2-second countdown. If she stops typing for 2 seconds, 
+      // it tells the server she stopped.
+      typingTimeoutRef.current = setTimeout(() => {
+        signalRConnection.invoke('TypingStopped', conversationId, activeUser?.name);
+      }, 2000);
+    }
+  };
 
   const handleSend = (e) => {
     debugger; // <--- The native browser breakpoint
@@ -328,7 +337,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       senderId: activeUser.id,
       content: input,
       timestamp: new Date().toISOString()
-      
+
     };
 
     // 4. Instantly draws the message on Dr. Ahmed's screen (Optimistic UI update)
@@ -341,7 +350,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
 
     // 6. Figures out which conversation ID to target (Group vs Direct Message)
     const targetConversationId = conversationId;
-    
+
     // 7. Sends a POST request over HTTP to the C# Backend API
     fetch('http://localhost:5123/api/messages', {
       method: 'POST',
@@ -353,7 +362,6 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       })
     }).catch(err => console.error("API send log:", err));
   };
-
   if (!selectedContact) {
     return (
       <div className="chat-main" style={{ alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
@@ -371,26 +379,26 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
             <div className="avatar" style={{ background: isGroup ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : undefined }}>
               {contactInitials}
             </div>
-            
+
           </div>
           <div>
             <div className="chat-header-name">{contactName}</div>
-<div className="chat-header-status">
-  {isTyping 
-    ? <span style={{ color: '#38bdf8', fontStyle: 'italic' }}>{typingUser} is typing...</span>
-     :(isGroup
-     ? <span style={{ color: '#94a3b8' }}>
-    {selectedContact.members 
-      ? selectedContact.members.map(m => m.user?.name).filter(Boolean).join(', ')
-      : 'Group Chat'
-    }
-  </span>
-        : (isContactOnline 
-            ? <span style={{ color: 'var(--online-green)' }}>Online</span> 
-            : <span style={{ color: '#94a3b8' }}>Offline</span> 
-          ))
- }
-</div>
+            <div className="chat-header-status">
+              {isTyping
+                ? <span style={{ color: '#38bdf8', fontStyle: 'italic' }}>{typingUser} is typing...</span>
+                : (isGroup
+                  ? <span style={{ color: '#94a3b8' }}>
+                    {selectedContact.members
+                      ? selectedContact.members.map(m => m.user?.name).filter(Boolean).join(', ')
+                      : 'Group Chat'
+                    }
+                  </span>
+                  : (isContactOnline
+                    ? <span style={{ color: 'var(--online-green)' }}>Online</span>
+                    : <span style={{ color: '#94a3b8' }}>Offline</span>
+                  ))
+              }
+            </div>
           </div>
         </div>
 
@@ -441,15 +449,15 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
           currentMessages.map((msg, index) => {
             const isSent = msg.senderId === activeUser.id;
             const senderName = USER_MAP[msg.senderId] || `User #${msg.senderId}`;
-            const timeStr = msg.timestamp 
+            const timeStr = msg.timestamp
               ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               : '11:00 AM';
 
             // Date Divider Logic
             const currentDateString = msg.timestamp ? new Date(msg.timestamp).toDateString() : new Date().toDateString();
             const previousMessage = currentMessages[index - 1];
-            const previousDateString = previousMessage && previousMessage.timestamp 
-              ? new Date(previousMessage.timestamp).toDateString() 
+            const previousDateString = previousMessage && previousMessage.timestamp
+              ? new Date(previousMessage.timestamp).toDateString()
               : null;
 
             // Only show the divider if the date is different from the previous message
@@ -463,7 +471,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
                     <span className="date-divider-text">{dateDividerText}</span>
                   </div>
                 )}
-                
+
                 <div className={`message-row ${isSent ? 'sent' : 'received'}`}>
                   <div className="message-bubble-wrapper">
                     {!isSent && (
@@ -473,41 +481,41 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
                     )}
                     <div className="message-bubble">
                       {msg.content}
-                    </div>
-                    <div className="message-meta">
-                      <span>{timeStr}</span>
-                      {renderMessageStatus(msg, isSent)}
-                    </div>
+                  </div>
+                  <div className="message-meta">
+                    <span>{timeStr}</span>
+                    {renderMessageStatus(msg, isSent)}
                   </div>
                 </div>
+              </div>
               </React.Fragment>
-            );
+      );
           })
         )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Message Input Bar */}
-      <form onSubmit={handleSend} className="chat-input-container">
-        <div className="chat-input-wrapper">
-          <button type="button" className="plus-btn" title="Add attachment">
-            +
-          </button>
-          <input
-            type="text"
-            placeholder={`Message ${contactName}...`}
-            value={input}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <button type="submit" className="send-btn">
-          Send
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
-      </form>
+      <div ref={messagesEndRef} />
     </div>
+
+      {/* Message Input Bar */ }
+  <form onSubmit={handleSend} className="chat-input-container">
+    <div className="chat-input-wrapper">
+      <button type="button" className="plus-btn" title="Add attachment">
+        +
+      </button>
+      <input
+        type="text"
+        placeholder={`Message ${contactName}...`}
+        value={input}
+        onChange={handleInputChange}
+      />
+    </div>
+
+    <button type="submit" className="send-btn">
+      Send
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+      </svg>
+    </button>
+  </form>
+    </div >
   );
 }
