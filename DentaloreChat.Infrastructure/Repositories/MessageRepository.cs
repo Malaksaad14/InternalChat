@@ -18,6 +18,7 @@ public class MessageRepository : IMessageRepository
     public async Task<IEnumerable<Message>> GetMessagesByConversationIdAsync(Guid conversationId, int page = 1, int pageSize = 20)
     {
         var messages = await _context.Messages
+            .Include(m => m.Reactions)
             .Where(m => m.ConversationId == conversationId)
             .OrderByDescending(m => m.Timestamp) // Start from the newest messages
             .Skip((page - 1) * pageSize)
