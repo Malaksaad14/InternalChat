@@ -5,4 +5,5 @@ public class User
     public string? Name { get; set; }
     public Guid? ClinicId { get; set; }
     public Clinic? Clinic { get; set; }
+    public ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
 }

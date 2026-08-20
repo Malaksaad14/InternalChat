@@ -3,6 +3,7 @@ using System;
 using DentaloreChat.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DentaloreChat.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820093616_AddImageUrlToMessage")]
+    partial class AddImageUrlToMessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -187,7 +190,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hello Dr. Ahmed, welcome to Dentalore!",
                             ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            Timestamp = new DateTime(2026, 8, 20, 12, 58, 42, 170, DateTimeKind.Utc).AddTicks(4397)
+                            Timestamp = new DateTime(2026, 8, 20, 9, 26, 6, 190, DateTimeKind.Utc).AddTicks(9267)
                         },
                         new
                         {
@@ -195,7 +198,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hi Dr. Hana! Ready to discuss today's clinic schedule.",
                             ConversationId = new Guid("c1111111-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            Timestamp = new DateTime(2026, 8, 20, 13, 3, 42, 170, DateTimeKind.Utc).AddTicks(4408)
+                            Timestamp = new DateTime(2026, 8, 20, 9, 31, 6, 190, DateTimeKind.Utc).AddTicks(9286)
                         },
                         new
                         {
@@ -203,7 +206,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Welcome doctors to our Branch A Team Group Chat! 👋",
                             ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            Timestamp = new DateTime(2026, 8, 20, 12, 43, 42, 170, DateTimeKind.Utc).AddTicks(4412)
+                            Timestamp = new DateTime(2026, 8, 20, 9, 11, 6, 190, DateTimeKind.Utc).AddTicks(9291)
                         },
                         new
                         {
@@ -211,7 +214,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Great to have a shared channel!",
                             ConversationId = new Guid("c1010101-1111-1111-1111-111111111111"),
                             SenderId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            Timestamp = new DateTime(2026, 8, 20, 12, 48, 42, 170, DateTimeKind.Utc).AddTicks(4419)
+                            Timestamp = new DateTime(2026, 8, 20, 9, 16, 6, 190, DateTimeKind.Utc).AddTicks(9295)
                         },
                         new
                         {
@@ -219,7 +222,7 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Hi Dr. Sara, checking in from Branch B!",
                             ConversationId = new Guid("c4444444-4444-4444-4444-444444444444"),
                             SenderId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            Timestamp = new DateTime(2026, 8, 20, 13, 6, 42, 170, DateTimeKind.Utc).AddTicks(4423)
+                            Timestamp = new DateTime(2026, 8, 20, 9, 34, 6, 190, DateTimeKind.Utc).AddTicks(9299)
                         },
                         new
                         {
@@ -227,36 +230,8 @@ namespace DentaloreChat.Server.Migrations
                             Content = "Welcome to Branch B group chat!",
                             ConversationId = new Guid("c1020202-2222-2222-2222-222222222222"),
                             SenderId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            Timestamp = new DateTime(2026, 8, 20, 12, 58, 42, 170, DateTimeKind.Utc).AddTicks(4427)
+                            Timestamp = new DateTime(2026, 8, 20, 9, 26, 6, 190, DateTimeKind.Utc).AddTicks(9303)
                         });
-                });
-
-            modelBuilder.Entity("DentaloreChat.Domain.Entities.Reaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Emoji")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Reactions");
                 });
 
             modelBuilder.Entity("DentaloreChat.Domain.Entities.User", b =>
@@ -332,25 +307,6 @@ namespace DentaloreChat.Server.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DentaloreChat.Domain.Entities.Reaction", b =>
-                {
-                    b.HasOne("DentaloreChat.Domain.Entities.Message", "Message")
-                        .WithMany("Reactions")
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DentaloreChat.Domain.Entities.User", "User")
-                        .WithMany("Reactions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("DentaloreChat.Domain.Entities.User", b =>
                 {
                     b.HasOne("DentaloreChat.Domain.Entities.Clinic", "Clinic")
@@ -370,16 +326,6 @@ namespace DentaloreChat.Server.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Messages");
-                });
-
-            modelBuilder.Entity("DentaloreChat.Domain.Entities.Message", b =>
-                {
-                    b.Navigation("Reactions");
-                });
-
-            modelBuilder.Entity("DentaloreChat.Domain.Entities.User", b =>
-                {
-                    b.Navigation("Reactions");
                 });
 #pragma warning restore 612, 618
         }

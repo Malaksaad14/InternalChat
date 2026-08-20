@@ -38,12 +38,13 @@ builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IClinicRepository, ClinicRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-
+builder.Services.AddScoped<IReactionRepository, ReactionRepository>();
 // 3. Register Services
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IClinicService, ClinicService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IReactionService, ReactionService>();
 
 var app = builder.Build();
 
@@ -59,8 +60,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 app.UseCors("AllowReactApp");
-
+app.UseStaticFiles(); //ashan nkhly l back ysm7 ll front yshof l swar
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
+
 
 app.Run();

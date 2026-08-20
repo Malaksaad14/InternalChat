@@ -6,4 +6,6 @@ public class Message
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public Guid ConversationId { get; set; }
     public Guid SenderId { get; set; }
+    public string? ImageUrl {get; set;}
+    public ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
 }

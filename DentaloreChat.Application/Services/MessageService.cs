@@ -20,9 +20,9 @@ public class MessageService : IMessageService
     public async Task<Message> SendMessageAsync(Message message)
     {
         // Business rule validation
-        if (string.IsNullOrWhiteSpace(message.Content))
+        if (string.IsNullOrWhiteSpace(message.Content) && string.IsNullOrWhiteSpace(message.ImageUrl))
         {
-            throw new ArgumentException("Message content cannot be empty.");
+            throw new ArgumentException("Message must have content or an image.");
         }
 
         message.Timestamp = DateTime.UtcNow;

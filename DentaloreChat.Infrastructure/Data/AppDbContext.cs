@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ConversationMember> ConversationMembers { get; set; }
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Reaction> Reactions { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

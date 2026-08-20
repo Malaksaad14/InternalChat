@@ -79,6 +79,12 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
   const [typingUser, setTypingUser] = useState('');
   const typingTimeoutRef = useRef(null);
 
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null); 
+
+  const [pendingImage, setPendingImage] = useState(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState(null); 
+
 
   const renderMessageStatus = (msg, isSent) => {
     if (!isSent) return null;
@@ -198,6 +204,20 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       }, 1500);
     }
   };
+ 
+   //2. awl ma l user ykhtar sora l function de btshtghl
+  // de bt save l file f state asmha pendingImage
+  const handleImageUpload = (e) => {
+   const file = e.target.files[0];
+   if (!file) return;
+    setPendingImage(file);
+    //bt3ml url wahmy b astkhdam URL.createObjectURL w t3mlo save f state asmha pendingImagePreview 3shan n3rdha l user abl ma yb3t
+    setPendingImagePreview(URL.createObjectURL(file));
+    e.target.value = ''; 
+  };
+
+
+
 
   // Setup SignalR connection using shared connection from parent
   useEffect(() => {
@@ -232,7 +252,7 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     });
 
     // Listen for incoming messages
-    signalRConnection.on('ReceiveMessage', (convId, senderId, content, timestamp) => {
+    signalRConnection.on('ReceiveMessage', (convId, senderId, content, timestamp, imageUrl) => {
       debugger;
       // 2. Checks if the incoming message belongs to the chat she is currently looking at
       if (convId === conversationId) {
@@ -241,16 +261,24 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
           id: Date.now(),
           senderId: senderId,
           content: content,
-          timestamp: timestamp
+          timestamp: timestamp,
+          imageUrl: imageUrl
         };
         // 4. Updates her React state, appending the new message to her chat feed
         setChatHistories(prev => {
           const currentHistory = prev[chatId] || [];
           // Duplicate check to prevent double-rendering bugs
-          const isDuplicate = currentHistory.some(
-            msg => msg.content === content && msg.senderId === senderId &&
-              Math.abs(new Date(msg.timestamp) - new Date(timestamp)) < 1000
-          );
+          const isDuplicate = currentHistory.some(msg => {
+            // nkaren bl id 
+            if (msg.id && newMessage.id && msg.id === newMessage.id) return true;
+            
+            const isContentMatch = msg.content === content;
+            const isImageMatch = msg.imageUrl === imageUrl;
+            const isTimeMatch = Math.abs(new Date(msg.timestamp) - new Date(timestamp)) < 2000;
+
+            return msg.senderId === senderId && isContentMatch && isImageMatch && isTimeMatch;
+          });
+
           if (isDuplicate) return prev;
 
           return {
@@ -277,15 +305,6 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
         });
       }
     });
-    signalRConnection.on('MessageDeleted', (convId, messageId) => {
-      if (convId === conversationId) {
-        setChatHistories(prev => {
-          const currentHistory = prev[chatId] || [];
-          const updatedHistory = currentHistory.filter(msg => msg.id !== messageId);
-          return { ...prev, [chatId]: updatedHistory };
-        });
-      }
-    });
     return () => {
       if (signalRConnection.state === signalR.HubConnectionState.Connected && conversationId) {
         signalRConnection.invoke('LeaveConversation', conversationId).catch(err => console.error(err));
@@ -294,7 +313,6 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       signalRConnection.off('UserStopTyping');
       signalRConnection.off('ReceiveMessage');
       signalRConnection.off('MessagesRead');
-      signalRConnection.off('MessageDeleted');
     };
   }, [conversationId, chatId, activeUser?.id, selectedContact?.id, signalRConnection]);
 
@@ -305,6 +323,56 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       signalRConnection.invoke('MarkAsRead', conversationId, activeUser?.id).catch(err => console.error(err));
     }
   }, [conversationId, signalRConnection, activeUser]);
+
+  // 🟢 1. THE CORRECTED SIGNALR LISTENER
+  useEffect(() => {
+      if (!signalRConnection) return; 
+
+      signalRConnection.on("ReceiveReactionUpdate", (messageId, userId, emoji, actionTaken) => {
+          console.log("🔥 SIGNALR CAUGHT THE REACTION! 🔥", emoji); 
+
+          // We must use setChatHistories, NOT setMessages!
+          setChatHistories(prev => {
+              // Copy the entire history object
+              const updatedHistories = { ...prev };
+              
+              // Loop through the current chat and update the exact message
+              if (updatedHistories[chatId]) {
+                  updatedHistories[chatId] = updatedHistories[chatId].map(msg => {
+                      if (msg.id !== messageId) return msg;
+                      
+                      const currentReactions = msg.reactions || [];
+                      if (actionTaken === "added") {
+                          return { ...msg, reactions: [...currentReactions, { userId, emoji }] };
+                      }
+                      if (actionTaken === "removed") {
+                          return { ...msg, reactions: currentReactions.filter(r => !(r.userId === userId && r.emoji === emoji)) };
+                      }
+                      return msg;
+                  });
+              }
+              return updatedHistories;
+          });
+      });
+
+      return () => {
+          signalRConnection.off("ReceiveReactionUpdate");
+      };
+  }, [signalRConnection, chatId]); 
+
+  // 🟢 2. THE CORRECTED API CALL
+  const handleToggleReaction = async (messageId, emoji) => {
+      try {
+          // Use activeUser.id instead of currentUserId!
+          const response = await fetch(`http://localhost:5123/api/Reaction/${messageId}/user/${activeUser?.id}/toggle`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(emoji) // Send just the string, not an object!
+          });
+      } catch(error) {
+          console.error('Error toggling reaction:', error);
+      }
+  };
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -325,40 +393,64 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
       }, 2000);
     }
   };
+ //3. lma l user yktb text aw ykhtar sora w ydos send btshtghl l function de
+  const handleSend = async (e) => {
+    e.preventDefault(); 
+    if (!input.trim() && !pendingImage) return; 
+    if (!activeUser?.id) return; 
 
-  const handleSend = (e) => {
-    debugger; // <--- The native browser breakpoint
-    e.preventDefault(); // 1. Stops the browser from refreshing the page
-    if (!input.trim() || !activeUser?.id) return; // 2. Safety check: exits if input is empty
+    let uploadedImageUrl = null;
+ //bts2l hal fe bending image? lw ah byhot l file f FormData w byb3to l server 3shan y7wlo l url ha2e2y
+    if (pendingImage) {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', pendingImage);
 
-    // 3. Creates a temporary local message object
+      try {
+        const response = await fetch('http://localhost:5123/api/messages/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!response.ok) throw new Error("Upload failed");
+        const data = await response.json();
+        //delwaty hya maaha l imageurl ely gay mn l server
+        uploadedImageUrl = data.imageUrl; 
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        alert("Failed to upload image. Please try again.");
+        setIsUploading(false);
+        return; 
+      }
+      setIsUploading(false);
+    }
+   //htroh t3ml message object feh l text wl image wl senderid wl convid ashan tb3to ll back tany
     const newMessageObj = {
       id: Date.now(),
       senderId: activeUser.id,
       content: input,
+      imageUrl: uploadedImageUrl,
       timestamp: new Date().toISOString()
-
     };
-
-    // 4. Instantly draws the message on Dr. Ahmed's screen (Optimistic UI update)
+//hena bydkhl l object l gded fl chathistories
     setChatHistories(prev => ({
       ...prev,
       [chatId]: [...(prev[chatId] || []), newMessageObj]
     }));
 
-    setInput(''); // 5. Clears the input typing box
+    setInput(''); 
+    setPendingImage(null);
+    setPendingImagePreview(null);
 
-    // 6. Figures out which conversation ID to target (Group vs Direct Message)
     const targetConversationId = conversationId;
-
-    // 7. Sends a POST request over HTTP to the C# Backend API
+//l mrady l backend hyst2bl l message de f SendMessage
     fetch('http://localhost:5123/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         conversationId: targetConversationId,
         senderId: activeUser.id,
-        content: input
+        content: input,
+        imageUrl: uploadedImageUrl
       })
     }).catch(err => console.error("API send log:", err));
   };
@@ -480,11 +572,35 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
                       </div>
                     )}
                     <div className="message-bubble">
+                        {/* lw fe sora n3rdha l awl*/}
+                        {msg.imageUrl && (
+                           <img 
+                           src={`http://localhost:5123${msg.imageUrl}`} 
+                           alt="attachment" 
+                           style={{ maxWidth: '200px', borderRadius: '8px', marginBottom: '4px', display: 'block' }} 
+                           />
+                        )}
+  
+                     {/* w b3den n3rd l text*/}
                       {msg.content}
                   </div>
                   <div className="message-meta">
                     <span>{timeStr}</span>
                     {renderMessageStatus(msg, isSent)}
+                    </div>
+                    <div className="reaction-bar">
+                      {/* The Buttons */}
+                      <button onClick={() => handleToggleReaction(msg.id, "👍")}>👍</button>
+                      <button onClick={() => handleToggleReaction(msg.id, "❤️")}>❤️</button>
+                      
+                      {/* The Display */}
+                      <div className="active-reactions">
+                          {(msg.reactions || []).map((r, index) => (
+                              <span key={index} className="emoji-display">
+                                  {r.emoji}
+                              </span>
+                          ))}
+                      </div>
                   </div>
                 </div>
               </div>
@@ -496,11 +612,22 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
     </div>
 
       {/* Message Input Bar */ }
+
+      {pendingImagePreview && (
+  <div style={{ padding: '10px', backgroundColor: '#1e293b', borderTop: '1px solid #334155', position: 'relative' }}>
+    <button 
+      onClick={() => { setPendingImage(null); setPendingImagePreview(null); }}
+      style={{ position: 'absolute', top: '15px', right: '15px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '25px', height: '25px', cursor: 'pointer' }}
+    >
+      X
+    </button>
+    <img src={pendingImagePreview} alt="Preview" style={{ height: '100px', borderRadius: '8px' }} />
+  </div>
+)}
+
+
   <form onSubmit={handleSend} className="chat-input-container">
     <div className="chat-input-wrapper">
-      <button type="button" className="plus-btn" title="Add attachment">
-        +
-      </button>
       <input
         type="text"
         placeholder={`Message ${contactName}...`}
@@ -508,6 +635,23 @@ export default function ChatScreen({ conversationId, activeUser, selectedContact
         onChange={handleInputChange}
       />
     </div>
+    <button 
+    type="button" 
+    className="plus-btn" 
+    title="Upload Image"
+    onClick={() => fileInputRef.current?.click()} // l + button marbot b input file mkhfy lma l user ydos 3leh yfthlo l file picker
+    disabled={isUploading}
+   >
+    {isUploading ? '⏳' : '+'} {/* لو بيرفع يعرض ساعة رملية، لو لأ يعرض + */}
+   </button>
+   {/* الـ input الحقيقي بس هنخليه مخفي */}
+   <input
+     type="file"
+     accept="image/*"
+     ref={fileInputRef}
+     style={{ display: 'none' }}
+     onChange={handleImageUpload} // el function de btshtghl awl ma l user y5tar sora mn l file picker
+    />
 
     <button type="submit" className="send-btn">
       Send
